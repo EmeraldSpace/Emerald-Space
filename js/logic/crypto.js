@@ -6,7 +6,8 @@ import { playSFX } from './audio.js';
 
 // === MAINNET SETTINGS ===
 // Highly recommended to change this NETWORK to a paid RPC (Helius/Quicknode) for official release
-const NETWORK = 'https://api.mainnet-beta.solana.com'; 
+// [UPDATE] Menggunakan Jalur Helius RPC untuk menghindari Error 403
+const NETWORK = 'https://mainnet.helius-rpc.com/?api-key=79850b9a-0b16-45cc-9ff8-b38375ea7d14';
 const ADMIN_WALLET = 'ExNJ84TBmLsy7FB4duYteK5bWXEEuofSStPHCcA7TeQc'; // REPLACE WITH YOUR SOLANA WALLET!
 const PRIVY_APP_ID = 'cmnam2ras00gj0cl22pik3xih'; 
 
