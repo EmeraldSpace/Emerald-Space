@@ -68,5 +68,5 @@ Contributions make the open-source community an amazing place to learn and creat
 ## 📝 License
 Distributed under the **MIT License**. See `LICENSE` for more information.
 
-**Developer:** [suranto9898](https://github.com/suranto9898)  
+**Developer:** [EmeraldSpace](https://github.com/EmeraldSpace)  
 **Project Status:** In Active Development 🛠️
