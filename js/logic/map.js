@@ -7,7 +7,7 @@ import { MAP_DATA } from '../data/monsters.js';
 /**
  * Location Transition Logic (Warp Drive)
  */
-export const travelToLocation = (locationId, player, currentSolBalance = 0) => {
+export const travelToLocation = (locationId, player, currentEmrldBalance = 0) => {
     const targetMap = MAP_DATA.find(m => m.id === locationId) || MAP_DATA[locationId];
 
     // Failsafe if coordinates are not found
@@ -26,14 +26,14 @@ export const travelToLocation = (locationId, player, currentSolBalance = 0) => {
         };
     }
 
-    // 2. Special Map Requirement Validation (Web3 Token)
+    // 2. Special Map Requirement Validation (Web3 Token - $EMRLD)
     const isVipMap = targetMap.reqToken ? true : false;
-    const reqAmount = 1; // Standard 1 SOL Devnet from mapUI.js
+    const reqAmount = 1000000; // 1 Million $EMRLD Requirement
 
-    if (isVipMap && currentSolBalance < reqAmount) {
+    if (isVipMap && currentEmrldBalance < reqAmount) {
         return { 
             success: false, 
-            message: "🔒 Restricted Area! Sensors detect insufficient Web3 (SOL) balance." 
+            message: `🔒 Restricted Area! Sensors detect insufficient Web3 balance. Requires at least 1,000,000 $EMRLD.` 
         };
     }
 
@@ -55,18 +55,18 @@ export const getMapMonsters = (locationId) => {
 /**
  * Check if a location is locked (SYNCED WITH mapUI.js)
  */
-export const checkMapAccess = (map, player, currentSolBalance = 0) => {
+export const checkMapAccess = (map, player, currentEmrldBalance = 0) => {
     const levelLocked = player.level < map.minLevel;
     
     // VIP Requirement: If there is reqToken in monster data
     const isVipMap = map.reqToken ? true : false;
-    const reqAmount = 1; // Standard 1 SOL Devnet from mapUI.js
+    const reqAmount = 1000000; // 1 Million $EMRLD Requirement
     
-    const tokenLocked = isVipMap && currentSolBalance < reqAmount;
+    const tokenLocked = isVipMap && currentEmrldBalance < reqAmount;
     
     return {
         isLocked: levelLocked || tokenLocked,
         // UI Text updated for smaller screen fitting
-        reason: levelLocked ? `Lv. ${map.minLevel} Req.` : (tokenLocked ? "1 SOL Req." : "")
+        reason: levelLocked ? `Lv. ${map.minLevel} Req.` : (tokenLocked ? "1M $EMRLD Req." : "")
     };
 };
