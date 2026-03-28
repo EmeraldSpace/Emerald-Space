@@ -1,0 +1,162 @@
+/* =========================================
+   CORE LAYOUT - EMERALD SPACE
+   ========================================= */
+.screen-container {
+    width: 100%; max-width: 500px; margin: 0 auto;
+    /* Disesuaikan: 70px mengikuti tinggi Top Bar yang baru */
+    min-height: 100vh; padding: calc(70px + 15px) 20px calc(75px + 25px) 20px;
+    position: relative; overflow-x: hidden;
+}
+
+.screen {
+    width: 100%; display: none;
+    animation: screenFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes screenFadeIn {
+    from { opacity: 0; transform: translateY(15px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+#setup-ship-img { max-height: 150px; width: auto; object-fit: contain; }
+
+/* =========================================
+   TOP BAR - SCI-FI POLISHED LAYOUT V3
+   ========================================= */
+.top-bar {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 500px;
+    height: 70px;
+    background: linear-gradient(180deg, rgba(13,17,23,0.95) 0%, rgba(13,17,23,0.7) 100%);
+    backdrop-filter: blur(10px);
+    border-bottom: 2px solid rgba(46, 204, 113, 0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 0 15px rgba(46, 204, 113, 0.05);
+    z-index: 2000;
+    padding: 0 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* --- KOLOM KIRI: LEVEL & USER --- */
+.user-info-left {
+    display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 2px;
+}
+
+#player-username {
+    color: #e6edf3; font-weight: 900; text-transform: uppercase; font-size: 14px;
+    letter-spacing: 1.5px; text-shadow: 0 0 8px rgba(230, 237, 243, 0.5);
+}
+
+.level-xp-container { display: flex; align-items: center; gap: 6px; font-size: 10px; }
+.level-badge { color: var(--emerald); font-weight: bold; letter-spacing: 1px; }
+.xp-text { color: #8b949e; letter-spacing: 0.5px; }
+
+/* --- KOLOM TENGAH: AUDIO CONTROLS --- */
+.audio-controls-center {
+    display: flex; gap: 12px; align-items: center;
+    position: absolute; left: 50%; transform: translateX(-50%);
+}
+
+.btn-audio {
+    background: transparent; border: 1px solid rgba(46, 204, 113, 0.5); border-radius: 6px;
+    cursor: pointer; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center;
+    transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); padding: 0; outline: none;
+}
+
+.btn-audio:hover { background: rgba(46, 204, 113, 0.1); border-color: var(--emerald); transform: scale(1.05); }
+.icon-audio { width: 18px; height: 18px; filter: drop-shadow(0 0 4px var(--emerald)); }
+
+#btn-toggle-sfx { border-color: rgba(0, 234, 255, 0.5); }
+#btn-toggle-sfx .icon-audio { filter: drop-shadow(0 0 4px #00eaff); }
+
+/* --- KOLOM KANAN: CURRENCY --- */
+.user-info-right {
+    display: flex; flex-direction: column; justify-content: center; align-items: flex-end; gap: 6px;
+}
+
+.currency-item { display: flex; align-items: center; gap: 5px; font-weight: 900; font-size: 12px; letter-spacing: 0.5px; }
+.icon-currency { width: 14px; height: 14px; }
+.stamina-text { color: #00eaff; }
+.icon-stamina { filter: drop-shadow(0 0 5px #00eaff); }
+.gold-text { color: var(--gold); }
+.icon-gold { filter: drop-shadow(0 0 5px var(--gold)); }
+
+/* =========================================
+   BOTTOM NAVBAR & TOGGLE (FIXED FULL SCREEN)
+   ========================================= */
+.bottom-nav {
+    position: fixed !important; 
+    bottom: 0 !important; 
+    left: 50% !important; 
+    transform: translateX(-50%) !important;
+    width: 100% !important; 
+    max-width: 500px !important; 
+    height: 60px !important; /* DIKUNCI 60PX */
+    background: #161b22 !important; 
+    border-top: 2px solid var(--emerald) !important;
+    display: flex !important; 
+    justify-content: space-around !important; 
+    align-items: center !important;
+    padding: 0 !important; 
+    margin: 0 !important;
+    z-index: 2000 !important;
+    box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.8) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* KELAS UNTUK MENYEMBUNYIKAN NAVBAR (FULL SCREEN) */
+.bottom-nav.collapsed {
+    transform: translate(-50%, 100%) !important; 
+}
+
+.nav-btn {
+    background: none; border: none; color: #8b949e; flex: 1; 
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    height: 100%; cursor: pointer; transition: all 0.3s ease;
+    font-size: 10px; font-weight: bold; text-transform: uppercase;
+    background-size: 24px 24px; background-repeat: no-repeat; 
+    background-position: center 8px; padding-top: 28px; 
+}
+
+.nav-btn[data-target="hangar"] { background-image: url('../source/icon/hangar.png'); }
+.nav-btn[data-target="map"] { background-image: url('../source/icon/map.png'); }
+.nav-btn[data-target="inventory"] { background-image: url('../source/icon/inventory.png'); }
+.nav-btn[data-target="shop"] { background-image: url('../source/icon/shop.png'); }
+.nav-btn[data-target="about"] { background-image: url('../source/icon/about.png'); }
+
+.nav-btn.active {
+    color: var(--emerald);
+    background: radial-gradient(circle at bottom, rgba(0, 255, 65, 0.15) 0%, transparent 70%);
+    filter: drop-shadow(0 0 5px var(--emerald));
+}
+
+#nav-toggle {
+    position: fixed !important;
+    bottom: 60px !important; /* DUDUK TEPAT DI ATAS NAVBAR */
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 60px !important;
+    height: 24px !important;
+    background: #161b22 !important;
+    border: 1px solid var(--emerald) !important;
+    border-bottom: none !important;
+    border-radius: 12px 12px 0 0 !important;
+    z-index: 2001 !important;
+    cursor: pointer !important;
+    transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 -5px 10px rgba(0,0,0,0.5) !important;
+    color: var(--emerald) !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    font-size: 12px !important;
+}
+
+#nav-toggle.collapsed {
+    bottom: 0 !important; /* TURUN KE BAWAH SAAT NAVBAR HILANG */
+}

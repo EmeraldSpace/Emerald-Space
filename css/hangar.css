@@ -1,0 +1,127 @@
+/* =========================================
+   HANGAR UI STYLES - HOLOGRAPHIC V4
+   ========================================= */
+
+@keyframes hoverShip {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+}
+
+.hangar-dashboard { display: flex; flex-direction: column; align-items: center; position: relative; padding-top: 5px; }
+.hangar-header { text-align: center; margin-bottom: 25px; }
+.hangar-title { 
+    color: var(--emerald); font-size: 28px; 
+    text-shadow: 0 0 20px rgba(46, 204, 113, 0.6); 
+    letter-spacing: 4px; margin: 0; text-transform: uppercase; font-weight: 900; 
+}
+.hangar-subtitle { color: var(--text-dim); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; font-weight: bold;}
+
+/* --- PANGGUNG KACA HOLOGRAM (CENTER STAGE) --- */
+.hangar-center-stage { 
+    display: flex; justify-content: space-between; align-items: center; 
+    width: 100%; padding: 20px 15px; margin-bottom: 30px; border-radius: 16px;
+    background: rgba(22, 27, 34, 0.4); 
+    border: 1px solid rgba(46, 204, 113, 0.2);
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 10px 30px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Efek grid/radar di background panggung */
+.hangar-center-stage::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background-image: 
+        linear-gradient(rgba(46, 204, 113, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(46, 204, 113, 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+    z-index: 0; pointer-events: none;
+}
+
+/* Cahaya Sorot dari bawah kapal */
+.hangar-center-stage::after {
+    content: ''; position: absolute; bottom: -30px; left: 50%; width: 200px; height: 80px;
+    background: var(--emerald); filter: blur(50px); opacity: 0.2; transform: translateX(-50%); 
+    pointer-events: none; z-index: 1;
+}
+
+.hangar-gear-col { display: flex; flex-direction: column; gap: 20px; z-index: 2; }
+
+/* Animasi Kapal Lebih Halus dan Berbayang */
+.hangar-ship-img { 
+    width: 170px; height: auto; 
+    filter: drop-shadow(0 15px 15px rgba(0,0,0,0.8)) drop-shadow(0 0 15px var(--emerald-glow)); 
+    animation: hoverShip 4s ease-in-out infinite; z-index: 2; 
+}
+
+/* --- KOTAK SLOT ITEM (GEAR) --- */
+.gear-slot-hangar { 
+    width: 48px; height: 48px; 
+    background: rgba(13, 17, 23, 0.6); 
+    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+    border-radius: 10px; 
+    display: flex; justify-content: center; align-items: center; position: relative; transition: all 0.2s;
+    box-shadow: inset 0 0 10px rgba(255,255,255,0.03);
+}
+.gear-slot-hangar:active { transform: scale(0.92); }
+.gear-img-hangar { width: 30px; height: 30px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));}
+.gear-label-equip { position: absolute; bottom: -18px; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 5px rgba(0,0,0,0.8);}
+.gear-label-empty { color: #6e7681; font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+
+/* --- KOTAK STATUS PESAWAT (GRID) --- */
+.hangar-stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; }
+
+.stat-box-col { 
+    flex-direction: column; align-items: stretch; 
+    background: rgba(22, 27, 34, 0.6) !important; 
+    border: 1px solid var(--panel-border); 
+}
+.hangar-stats-grid .stat-box:last-child { 
+    background: linear-gradient(135deg, rgba(22, 27, 34, 0.6) 0%, rgba(255, 202, 40, 0.05) 100%) !important; 
+}
+
+.stat-bar-container { 
+    width: 100%; height: 6px; background: rgba(0,0,0,0.5); 
+    border-radius: 4px; display: flex; overflow: hidden; margin-top: 10px; 
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.8); border: none;
+}
+.stat-bar-base { height: 100%; background: #e6edf3; transition: width 0.5s ease-out; opacity: 0.8;}
+.stat-bar-bonus { height: 100%; box-shadow: inset 0 0 5px rgba(255,255,255,0.5); transition: width 0.5s ease-out; }
+
+/* --- TOMBOL REPAIR DARURAT --- */
+.btn-repair-hangar {
+    margin-top: 20px; margin-bottom: 20px; width: 100%; padding: 16px; 
+    background: rgba(255, 68, 68, 0.1); border: 1px solid var(--danger);
+    color: var(--danger); border-radius: 8px; font-weight: 900; font-size: 14px; letter-spacing: 2px;
+    cursor: pointer; box-shadow: 0 0 15px rgba(255, 68, 68, 0.2); transition: 0.2s;
+    text-transform: uppercase;
+}
+.btn-repair-hangar:active { transform: translateY(2px); background: var(--danger); color: white; box-shadow: 0 0 30px var(--danger);}
+
+/* --- MODAL POP-UP KHUSUS REPAIR --- */
+.repair-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 99999; }
+.repair-box { background: var(--carbon); padding: 25px; border-radius: 12px; border: 2px solid var(--emerald); box-shadow: 0 0 30px rgba(46, 204, 113, 0.4); text-align: center; width: 85%; max-width: 320px; }
+.repair-title { color: var(--emerald); margin-bottom: 12px; font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+.repair-desc { color: #e6edf3; font-size: 13px; margin-bottom: 25px; line-height: 1.5; }
+.repair-cost { color: var(--gold); font-size: 20px; font-weight: 900; text-shadow: 0 0 10px rgba(255, 202, 40, 0.5);}
+.repair-btn-group { display: flex; gap: 10px; }
+.btn-rep-cancel { flex: 1; padding: 12px; background: transparent; border: 1px solid #8b949e; color: #8b949e; border-radius: 8px; font-weight: 900; cursor: pointer; transition: 0.2s; }
+.btn-rep-confirm { flex: 1; padding: 12px; background: var(--emerald); border: none; color: #000; border-radius: 8px; font-weight: 900; cursor: pointer; box-shadow: 0 0 15px rgba(46, 204, 113, 0.4); transition: 0.2s; }
+
+/* Penyesuaian untuk layar HP yang sangat kecil (Contoh: iPhone SE) */
+@media (max-width: 360px) {
+    .hangar-ship-img { width: 140px; }
+    .hangar-center-stage { padding: 15px 10px; }
+    .gear-slot-hangar { width: 40px; height: 40px; }
+}
+
+/* Animasi Kapal Mengambang di Gravitasi Nol */
+@keyframes floatInSpace {
+    0% { transform: translateY(0px); filter: drop-shadow(0 0 10px rgba(46, 204, 113, 0.4)); }
+    50% { transform: translateY(-10px); filter: drop-shadow(0 0 25px rgba(46, 204, 113, 0.8)); }
+    100% { transform: translateY(0px); filter: drop-shadow(0 0 10px rgba(46, 204, 113, 0.4)); }
+}
+
+/* Terapkan ke gambar kapal di layar Setup dan Hangar */
+#setup-ship-img, .hangar-ship-img {
+    animation: floatInSpace 3s ease-in-out infinite !important;
+}
