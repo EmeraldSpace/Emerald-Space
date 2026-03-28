@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMERALD SPACE - MAINTENANCE</title>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #2ecc71;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .warning-box {
+            border: 2px dashed #ffca28;
+            padding: 30px;
+            background: rgba(255, 202, 40, 0.1);
+            box-shadow: 0 0 20px rgba(255, 202, 40, 0.2);
+            border-radius: 10px;
+        }
+        h1 { color: #ffca28; text-shadow: 0 0 10px #ffca28; }
+        p { color: #e6edf3; }
+        .spinner {
+            font-size: 50px;
+            animation: spin 2s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="warning-box">
+        <div class="spinner">⚙️</div>
+        <h1>SERVER OFFLINE</h1>
+        <p>Emerald Space is currently undergoing massive structural upgrades.</p>
+        <p style="color: #8b949e; font-size: 12px; margin-top: 20px;">Please stand by, Captain. We will be back online soon.</p>
+    </div>
+</body>
+</html>
