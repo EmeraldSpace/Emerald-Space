@@ -1,11 +1,14 @@
 /* =========================================
-   MAP UI CONTROLLER - WEB3 & GLOBAL WORLD BOSS (PURE SOL VERSION)
+   MAP UI CONTROLLER - WEB3 & GLOBAL WORLD BOSS ($EMRLD VIP GATE)
    ========================================= */
 import { MAP_DATA } from '../data/monsters.js';
 import { handleAttack } from './battleUI.js';
 import { getState, updateState } from '../logic/state.js'; 
 import { SHIPS } from '../data/ships.js'; 
 import { playSFX } from '../logic/audio.js'; 
+
+// [UPDATE] Import EMRLD balance checker function
+import { checkEmrldBalance } from '../logic/crypto.js'; 
 
 const SUPABASE_URL = 'https://ucoiceirejfvfshqcluq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjb2ljZWlyZWpmdmZzaHFjbHVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NDMwNjIsImV4cCI6MjA4OTIxOTA2Mn0.kgCDbH5e6dvZLWm2b9FPXa51_AQq7-ZiHaD7GgpeICc';
@@ -23,18 +26,25 @@ export const initMap = async () => {
     
     const state = getState();
     const pLevel = state.profile.level || 1;
-    
-    // [UPDATE]: Ambil status Elite dari state
-    const pIsElite = state.profile.isElite === true; 
 
     container.innerHTML = `
         <div style="text-align:center; padding:60px 20px; animation: pulse 1.5s infinite;">
             <h3 style="color:var(--emerald); margin-bottom:10px; font-size:18px; letter-spacing:2px;">
                 <img src="source/icon/sub/radar.png" style="width:22px; vertical-align:-3px; margin-right:8px;">SCANNING GALAXY...
             </h3>
-            <p style="color:#8b949e; font-size:12px;">Syncing Radar & Elite Coordinates</p>
+            <p style="color:#8b949e; font-size:12px;">Syncing Radar & Solana Wallet Signals</p>
         </div>
     `;
+
+    // [UPDATE]: Fetch $EMRLD Balance from Blockchain
+    let emrldBalance = 0;
+    try {
+        if (typeof checkEmrldBalance === 'function') {
+            emrldBalance = await checkEmrldBalance();
+        }
+    } catch (err) {
+        console.error("Failed to read $EMRLD balance:", err);
+    }
 
     let bossData = null;
     try {
@@ -73,7 +83,7 @@ export const initMap = async () => {
                 const freshState = getState();
                 const curS = freshState.profile.stamina !== undefined ? freshState.profile.stamina : 50;
                 
-                if (curS < 5) return showMapWarning("WARNING", "Stamina Depleted! Wait for recovery.");
+                if (curS < 5) return showMapWarning("WARNING", "Stamina Depleted! Wait for recovery or refill in Shop.");
 
                 btnBoss.disabled = true;
                 btnBoss.innerText = 'FIRING MAIN CANNON...';
@@ -103,7 +113,7 @@ export const initMap = async () => {
 
                     if (response.error) {
                         console.error("Supabase RPC Error:", response.error);
-                        showMapWarning("SYSTEM ERROR", "Gagal menghubungi server pusat!");
+                        showMapWarning("SYSTEM ERROR", "Failed to contact central server!");
                         btnBoss.disabled = false; btnBoss.innerText = 'ENGAGE BOSS (-5 STAMINA)'; btnBoss.style.opacity = '1';
                         return;
                     }
@@ -163,12 +173,11 @@ export const initMap = async () => {
     ];
 
     MAP_DATA.forEach((loc, index) => {
-        // [UPDATE]: Menentukan apakah map ini adalah Map VIP/Elite
         const isVipMap = loc.reqToken ? true : false;
         
-        // Logika Penguncian
+        // [UPDATE]: Token Gating Logic with $EMRLD
         const isLevelLocked = pLevel < loc.minLevel;
-        const isEliteLocked = isVipMap && !pIsElite; // Terkunci jika map VIP TAPI pemain bukan Elite
+        const isEliteLocked = isVipMap && emrldBalance < 1000000; 
         
         const isLocked = isLevelLocked || isEliteLocked; 
         const isOpen = !isLocked && index === currentSectorIndex;
@@ -179,12 +188,11 @@ export const initMap = async () => {
         const galaxyFile = PLANET_ICONS[index % PLANET_ICONS.length];
         const planetIcon = `<img src="source/icon/sub/${galaxyFile}" style="width:18px; vertical-align:-3px; margin-right:6px; filter: drop-shadow(0 0 3px rgba(46, 204, 113, 0.5));">`;
         
-        // [UPDATE ICON] Ganti judul menjadi ELITE SECTOR
         const titleText = isVipMap ? `<img src="source/icon/sub/vip.png" style="width:18px; vertical-align:-3px; margin-right:6px;"> ${loc.name} (ELITE SECTOR)` : `${planetIcon} ${loc.name}`;
 
         let reqText = '';
         if (isVipMap) {
-            reqText = `<div class="map-req-text ${isLocked ? 'req-fail' : 'req-pass-vip'}">Req: Lv.${loc.minLevel} & Elite License</div>`;
+            reqText = `<div class="map-req-text ${isLocked ? 'req-fail' : 'req-pass-vip'}">Req: Lv.${loc.minLevel} & 1M $EMRLD</div>`;
         } else {
             reqText = `<div class="map-req-text ${isLocked ? 'req-fail' : 'req-pass'}">Req: Lv.${loc.minLevel}</div>`;
         }
@@ -204,8 +212,8 @@ export const initMap = async () => {
                 if (isLevelLocked) {
                     showMapWarning("ACCESS DENIED", `This sector is too dangerous!<br><br>Required: <strong class="text-emerald">Level ${loc.minLevel}</strong><br>Your Level: <strong style="color:#ff4444;">${pLevel}</strong>`);
                 } else if (isEliteLocked) {
-                    // [UPDATE PESAN PENOLAKAN] Khusus Elite License
-                    showMapWarning("ELITE ACCESS DENIED", `Exclusive access for Elite Pilots!<br><br>To enter this sector, you must purchase the <strong style="color:var(--gold);">Elite License</strong> from the INFO Terminal.`);
+                    // [UPDATE WARNING] Token Gating Message
+                    showMapWarning("VIP ACCESS DENIED", `Exclusive access for Token Holders!<br><br>To enter this sector, your Solana wallet must hold at least <strong style="color:var(--emerald);">1,000,000 $EMRLD</strong>.`);
                 }
                 return; 
             }
@@ -244,7 +252,7 @@ export const initMap = async () => {
                 else if (loc.minLevel >= 10) { dropRarityText = '<span style="color:#3498db;">Com - Rare</span>'; } 
                 else if (loc.minLevel >= 5) { dropRarityText = '<span style="color:#2ecc71;">Com - Unc</span>'; }
 
-                let vipBonusText = enemy.isVip ? '<span style="color:#2ecc71; font-size:9px; margin-left:5px;">(+Hit Bonus)</span>' : '';
+                let vipBonusText = enemy.isVip ? '<span style="color:#2ecc71; font-size:9px; margin-left:5px;">(+Drop Bonus)</span>' : '';
                 let imgClass = `monster-img ${isDisabled ? 'disabled' : (enemy.isVip ? 'vip' : '')}`;
                 let imgContClass = `monster-img-container ${enemy.isVip ? 'vip' : ''}`;
                 let btnClass = `btn-battle ${isDisabled ? 'disabled' : (enemy.isVip ? 'vip' : 'normal')}`;
@@ -374,7 +382,7 @@ function showMapConfirm(title, message, onConfirm) {
 }
 
 // ===============================================
-// ANIMASI SINEMATIK WORLD BOSS! (TIDAK BERUBAH)
+// ANIMASI SINEMATIK WORLD BOSS!
 // ===============================================
 async function showBossAnimation(playerImgSrc, bossImgSrc, playerDmg, bossDmg, onComplete) {
     const overlay = document.createElement('div'); 
