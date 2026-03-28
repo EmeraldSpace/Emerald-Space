@@ -1,5 +1,5 @@
 /* =========================================
-   CORE APP - EMERALD SPACE (SUPABASE READY)
+   CORE APP - EMERALD SPACE (MAINNET + PRIVY READY)
    ========================================= */
 
 import { getState, updateState, loadStateFromServer, getTopPlayers, checkAndRecoverWallet } from './js/logic/state.js';
@@ -11,6 +11,9 @@ import { initShop } from './js/ui/shopUI.js';
 import { updateTopBar as battleUpdateTopBar } from './js/ui/battleUI.js';
 import { playSFX, playBGM, toggleBGM, toggleSFX } from './js/logic/audio.js';
 import { initStarfield } from './js/ui/starfield.js'; 
+
+// [UPDATE] Import logika dompet pintar dari crypto.js
+import { connectWallet, disconnectWallet } from './js/logic/crypto.js'; 
 
 let connectedWalletAddress = null;
 
@@ -73,16 +76,15 @@ const updateTopBar = () => {
     const userDisplay = document.getElementById('player-username');
     if (userDisplay) userDisplay.innerText = state.profile.username || "PILOT";
     
-    // --- LOGIKA UNTUK MUNCULIN MAHKOTA VIP DI HEADER ---
     const vipBadge = document.getElementById('player-vip-badge');
     if (vipBadge && userDisplay) {
         if (state.profile.isElite) {
-            vipBadge.style.display = 'flex'; // Munculkan Mahkota
-            userDisplay.style.color = 'var(--gold)'; // Nama jadi Emas
+            vipBadge.style.display = 'flex'; 
+            userDisplay.style.color = 'var(--gold)'; 
             userDisplay.style.textShadow = '0 0 8px rgba(255, 202, 40, 0.6)';
         } else {
-            vipBadge.style.display = 'none'; // Sembunyikan Mahkota
-            userDisplay.style.color = 'var(--emerald)'; // Nama kembali Hijau
+            vipBadge.style.display = 'none'; 
+            userDisplay.style.color = 'var(--emerald)'; 
             userDisplay.style.textShadow = '0 0 8px rgba(46, 204, 113, 0.4)';
         }
     }
@@ -90,22 +92,15 @@ const updateTopBar = () => {
     if (typeof battleUpdateTopBar === 'function') battleUpdateTopBar();
 };
 
-
-// ==========================================
-// FITUR BARU: DAILY LOGIN REWARDS (ANTI-CHEAT PATCH)
-// ==========================================
 const checkDailyReward = () => {
     const state = getState();
     const today = new Date().toDateString();
     
-    // [KUNCI KEAMANAN GANDA]: Cek dari Server DAN LocalStorage Browser
     const localRewardCheck = localStorage.getItem('EMERALD_LAST_REWARD');
     if (state.profile.lastRewardDate === today || localRewardCheck === today) return;
 
-    // Ambil data streak dengan pengaman local fallback
     let streak = state.profile.loginStreak || parseInt(localStorage.getItem('EMERALD_LOGIN_STREAK') || '0');
     
-    // Mengecek apakah pemain login kemarin
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     
@@ -163,7 +158,6 @@ const checkDailyReward = () => {
         window.showSimplePopup("SUPPLY CLAIMED", "Rewards have been transferred to your cargo.", "#3498db");
     };
 };
-// ==========================================
 
 const checkAccountSetup = () => {
     const state = getState();
@@ -175,6 +169,15 @@ const checkAccountSetup = () => {
 
         switchScreen('setup');
         
+        // [AUTO-FILL USERNAME DARI TELEGRAM JIKA ADA]
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+            const tgName = window.Telegram.WebApp.initDataUnsafe.user.username || window.Telegram.WebApp.initDataUnsafe.user.first_name;
+            if (tgName) {
+                const nameInput = document.getElementById('input-username');
+                if (nameInput) nameInput.value = tgName.substring(0, 12).toUpperCase();
+            }
+        }
+
         let selectedShip = 'INTERCEPTOR';
         const shipBtns = document.querySelectorAll('.btn-ship-select');
         const shipImgEl = document.getElementById('setup-ship-img');
@@ -260,10 +263,11 @@ const checkAccountSetup = () => {
     }
 };
 
+// ==========================================
+// SOLANA MULTI-WALLET LISTENER
+// ==========================================
 const btnOpenPopup = document.getElementById('btn-open-wallet-popup');
 const walletOverlay = document.getElementById('wallet-select-overlay');
-const btnPhantom = document.getElementById('btn-phantom-select');
-const btnSolflare = document.getElementById('btn-solflare-select');
 const btnCancel = document.getElementById('btn-cancel-select');
 const walletStatusDiv = document.getElementById('wallet-status');
 const walletAddressDisplay = document.getElementById('wallet-address-display');
@@ -272,30 +276,16 @@ if (btnOpenPopup) btnOpenPopup.onclick = () => { playSFX('click'); walletOverlay
 if (btnCancel) btnCancel.onclick = () => { playSFX('click'); walletOverlay.style.display = 'none'; };
 if (walletOverlay) walletOverlay.onclick = (event) => { if (event.target === walletOverlay) walletOverlay.style.display = 'none'; };
 
-const connectWallet = async (walletType) => {
-    let provider = null;
-    let walletName = '';
-
-    if (walletType === 'phantom') { provider = window.phantom?.solana || window.solana; walletName = 'Phantom'; } 
-    else if (walletType === 'solflare') { provider = window.solflare; walletName = 'Solflare'; }
-
-    if (provider) { 
-        try {
-            const resp = await provider.connect();
-            const pubKey = resp.publicKey || provider.publicKey;
-            if (!pubKey) throw new Error("Public Key missing!");
-            
-            connectedWalletAddress = pubKey.toString();
-            
-            if (typeof window.showSimplePopup === 'function') {
-                window.showSimplePopup("VERIFICATION", `Please sign the message in your ${walletName} to verify identity.`, "var(--gold)");
-            }
-
-            const signMessageText = `Welcome to Emerald Space, Captain!\n\nPlease sign this message to verify your identity and secure your fleet data.\n\nWallet: ${connectedWalletAddress}`;
-            const encodedMessage = new TextEncoder().encode(signMessageText);
-            const signedMessage = await provider.signMessage(encodedMessage, "utf8");
-
-            if(typeof playSFX === 'function') playSFX('click');
+// [UPDATE]: Menangkap semua klik tombol dompet (Privy, Phantom, Solflare)
+document.querySelectorAll('.btn-connect-option').forEach(btn => {
+    btn.onclick = async () => {
+        const walletType = btn.getAttribute('data-wallet'); 
+        
+        // Panggil fungsi dari crypto.js
+        const address = await connectWallet(walletType);
+        
+        if (address) {
+            connectedWalletAddress = address;
             if(walletOverlay) walletOverlay.style.display = 'none';
             
             const isRecovered = await checkAndRecoverWallet(connectedWalletAddress);
@@ -317,30 +307,24 @@ const connectWallet = async (walletType) => {
                 walletAddressDisplay.innerText = shortAddress;
             }
 
-            const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
-            window.showSimplePopup("SIGNAL SECURED", `Mainframe synced to ${walletName} wallet:<br><strong style="color:var(--emerald);">${connectedWalletAddress.slice(0,4)}...${connectedWalletAddress.slice(-4)}</strong>`, "var(--emerald)");
-            
-        } catch (err) {
-            console.error(`${walletName} Connection Error:`, err);
-            if(walletOverlay) walletOverlay.style.display = 'none';
-            const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
-            let msg = err.message || 'Canceled by user';
-            if(msg.includes("User rejected")) msg = "Neural link rejected by Pilot.";
-            window.showSimplePopup("LINK FAILED", `${msg}`, "#ff4444");
-        }
-    } else {
-        if(walletOverlay) walletOverlay.style.display = 'none';
-        window.showSimplePopup("SYSTEM ERROR", `${walletName} terminal not detected! Access denied.`, "#ff4444");
-    }
-};
+            let providerName = walletType.toUpperCase();
+            if (walletType === 'privy') providerName = "BAGSAPP / PRIVY";
 
-if (btnPhantom) btnPhantom.onclick = () => connectWallet('phantom');
-if (btnSolflare) btnSolflare.onclick = () => connectWallet('solflare');
+            const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
+            window.showSimplePopup("SIGNAL SECURED", `Mainframe synced to Solana Network via ${providerName}:<br><strong style="color:var(--emerald);">${connectedWalletAddress.slice(0,4)}...${connectedWalletAddress.slice(-4)}</strong>`, "var(--emerald)");
+        }
+    };
+});
 
 
 const initGame = async () => {
     try {
         initStarfield();
+
+        // Expands Telegram Web App to full screen automatically
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.expand();
+        }
 
         let deviceWallet = localStorage.getItem('EMERALD_DEVICE_ID_V5');
         if (!deviceWallet) {
@@ -377,7 +361,6 @@ const initGame = async () => {
 // ==========================================
 const initAbout = async () => {
 
-    // --- TOMBOL PROJECT DOSSIER (WHITEPAPER) ---
     const btnTokenomics = document.getElementById('btn-show-tokenomics');
     if (btnTokenomics) {
         btnTokenomics.onclick = () => {
@@ -392,13 +375,13 @@ const initAbout = async () => {
                     
                     <h2 style="color: #00eaff; text-align: center; margin-bottom: 15px; letter-spacing: 2px; font-size: 18px; text-shadow: 0 0 10px #00eaff;">
                         <img src="source/icon/about.png" style="width:24px; vertical-align:-5px; filter: drop-shadow(0 0 5px #00eaff); margin-right: 5px;"> 
-                        OFFICIAL WHITEPAPER
+                        PROJECT DOSSIER
                     </h2>
                     
                     <div style="background: rgba(46, 204, 113, 0.05); border-left: 3px solid var(--emerald); padding: 12px; margin-bottom: 20px; border-radius: 0 6px 6px 0;">
                         <strong style="color: var(--emerald); font-size: 13px; display: block; margin-bottom: 4px; text-transform: uppercase;">The Paradigm Shift</strong>
                         <p style="color: #c9d1d9; font-size: 11px; line-height: 1.6; margin: 0; text-align: justify;">
-                            Emerald Space is not just a game; it is a <strong>Fully Decentralized Economy</strong> built on Solana. We are destroying the predatory "Play-to-Earn" model. By merging hyper-deflationary tokenomics with a sustainable organic treasury, we guarantee that <strong>the value created by the players, stays with the players.</strong>
+                            Emerald Space is pioneering the next generation of Web3 gaming natively on <strong>BagsApp</strong>. Powered by the blazing-fast <strong>Solana Network</strong>, we are merging hyper-deflationary tokenomics with a sustainable organic treasury to guarantee that the value created by the players, stays with the players.
                         </p>
                     </div>
                     
@@ -409,11 +392,11 @@ const initAbout = async () => {
                     <div style="background: #161b22; border: 1px solid #30363d; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px; border-bottom: 1px dashed #30363d; padding-bottom: 6px;">
                             <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">Launch Model</span>
-                            <strong style="color:#e6edf3; font-size:11px; text-align: right; line-height: 1.4;">100% Fairlaunch (BagsApp)</strong>
+                            <strong style="color:#e6edf3; font-size:11px; text-align: right; line-height: 1.4;">100% Fairlaunch on Solana</strong>
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px; border-bottom: 1px dashed #30363d; padding-bottom: 6px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">Team & VC Allocation</span>
-                            <strong style="color:#00eaff; font-size:11px; text-align: right; line-height: 1.4;">0% (Zero Dumps, Pure Community)</strong>
+                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">Ecosystem Focus</span>
+                            <strong style="color:#00eaff; font-size:11px; text-align: right; line-height: 1.4;">Telegram Mini-Apps & BagsApp</strong>
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px; border-bottom: 1px dashed #30363d; padding-bottom: 6px;">
                             <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">Total Supply</span>
@@ -450,12 +433,11 @@ const initAbout = async () => {
                     </div>
 
                     <h3 style="color: #3498db; font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #30363d; padding-bottom: 5px; text-transform: uppercase;">
-                        🔑 Token Utility & NFT Expansion
+                        🔑 Token Utility
                     </h3>
                     <ul style="color: #8b949e; font-size: 11px; line-height: 1.6; padding-left: 20px; margin-bottom: 25px;">
-                        <li style="margin-bottom: 6px;"><strong style="color:#e6edf3;">Elite Clearance:</strong> Holding $EMRLD is the only way to unlock VIP Map Sectors, secure Whitelist allocations, and access high-tier resource drops.</li>
-                        <li style="margin-bottom: 6px;"><strong style="color:#e6edf3;">The Cosmic Black Market:</strong> $EMRLD serves as the backbone currency for peer-to-peer trading of rare ship blueprints and mythic armaments.</li>
-                        <li><strong style="color:#ffca28; text-shadow: 0 0 5px rgba(255,202,40,0.4);">Official NFT Arsenal (Phase 2):</strong> Elite Ships and Mythic Gear will soon be minted as true Solana NFTs. $EMRLD will be the <strong>exclusive fuel</strong> required to forge, upgrade, and deploy these tournament-grade assets in official, high-stakes cosmic competitions.</li>
+                        <li style="margin-bottom: 6px;"><strong style="color:#e6edf3;">VIP Clearance:</strong> Holding 1,000,000 $EMRLD in your Solana Wallet unlocks the VIP Map Sectors where the rarest item drops are hidden.</li>
+                        <li style="margin-bottom: 6px;"><strong style="color:#e6edf3;">The Cosmic Black Market:</strong> $EMRLD serves as the backbone currency for peer-to-peer trading of rare ship blueprints.</li>
                     </ul>
                     
                     <button id="btn-close-tokenomics" style="width: 100%; padding: 14px; background: transparent; border: 1px solid #00eaff; color: #00eaff; font-weight: 900; border-radius: 6px; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; box-shadow: inset 0 0 10px rgba(0,234,255,0.1);">
@@ -480,7 +462,6 @@ const initAbout = async () => {
     if (btnElite) {
         const state = getState();
         
-        // [ANTI-CHEAT]: Cek apakah pemain SUDAH punya tiket (Pakai isElite)
         if (state.profile.isElite) {
             btnElite.innerHTML = '<img src="source/icon/sub/vip.png" style="width:16px; vertical-align:-2px; margin-right:6px;"> ELITE LICENSE ACQUIRED';
             btnElite.style.background = 'rgba(46, 204, 113, 0.1)';
@@ -488,7 +469,7 @@ const initAbout = async () => {
             btnElite.style.color = 'var(--emerald)';
             btnElite.style.boxShadow = '0 0 15px rgba(46, 204, 113, 0.3)';
             btnElite.style.cursor = 'default';
-            btnElite.disabled = true; // Matikan tombol
+            btnElite.disabled = true; 
         } else {
             btnElite.onclick = () => {
                 if(typeof playSFX === 'function') playSFX('click');
@@ -508,7 +489,7 @@ const initAbout = async () => {
                         
                         <p class="modal-text" style="color: #e6edf3; font-size: 13px; line-height: 1.6; margin-bottom: 15px;">
                             Upgrade your pilot clearance to <strong style="color:var(--gold)">ELITE TIER</strong>.<br>
-                            Unlock VIP sectors and exclusive features.
+                            Standout in the Leaderboards.
                         </p>
                         
                         <div style="margin: 15px 0; padding: 12px; background: rgba(0,0,0,0.6); border: 1px dashed var(--gold); border-radius: 8px;">
@@ -530,7 +511,6 @@ const initAbout = async () => {
                     const freshState = getState();
                     const freshGold = freshState.profile.gold || 0;
 
-                    // Pengaman Ganda
                     if (freshState.profile.isElite) {
                          window.showSimplePopup("SYSTEM ERROR", "You already own the Elite License!", "#ff4444");
                          return;
@@ -542,7 +522,7 @@ const initAbout = async () => {
                             profile: {
                                 ...freshState.profile,
                                 gold: updatedGold,
-                                isElite: true // Logika baru: isElite
+                                isElite: true
                             }
                         });
                         
@@ -569,9 +549,10 @@ const initAbout = async () => {
         try {
             const solanaWeb3 = window.solanaWeb3;
             if (solanaWeb3) {
-                const connection = new solanaWeb3.Connection('https://api.devnet.solana.com', 'confirmed');
+                // Mainnet USDC Checking
+                const connection = new solanaWeb3.Connection('https://api.mainnet-beta.solana.com', 'confirmed');
                 const adminPubkey = new solanaWeb3.PublicKey('ExNJ84TBmLsy7FB4duYteK5bWXEEuofSStPHCcA7TeQc');
-                const usdcMint = new solanaWeb3.PublicKey('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
+                const usdcMint = new solanaWeb3.PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC Mainnet Mint
                 
                 const tokenAccounts = await connection.getParsedTokenAccountsByOwner(adminPubkey, { mint: usdcMint });
                 let totalUsdc = 0;
@@ -605,7 +586,6 @@ const initAbout = async () => {
                 const item = document.createElement('div');
                 item.style.cssText = `display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#0d1117; border-radius:6px; border: 1px solid ${index < 3 ? rankColor : '#30363d'}; margin-bottom:8px;`;
 
-                // [UPDATE] Tampilkan Mahkota VIP untuk pemegang tiket di Leaderboard (Pakai is_elite)
                 const isEliteBadge = (p.isElite || p.is_elite) ? `<img src="source/icon/sub/vip.png" style="width:12px; vertical-align:-1px; margin-right:4px;" title="Elite Pilot">` : '';
 
                 item.innerHTML = `
@@ -662,13 +642,13 @@ if (btnDisconnectWallet) {
             overlay.remove(); 
         };
 
+        // [UPDATE] Menggunakan fungsi disconnect dompet multi-provider dari crypto.js
         document.getElementById('btn-confirm-disconnect').onclick = async () => {
             if(typeof playSFX === 'function') playSFX('click');
             overlay.remove(); 
             
             try {
-                if (window.solana && window.solana.isConnected) await window.solana.disconnect();
-                if (window.solflare && window.solflare.isConnected) await window.solflare.disconnect();
+                await disconnectWallet(); // Manggil fungsi disconnect pintar
                 
                 localStorage.removeItem('EMERALD_DEVICE_ID_V5');
                 localStorage.removeItem('EMERALD_SPACE_SAVE_V5');
