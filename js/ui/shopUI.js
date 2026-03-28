@@ -49,23 +49,20 @@ const createShopCategory = (id, title, color, isOpen = true) => {
     return wrapper;
 };
 
-// FITUR BARU: Update UI Toko tanpa menghancurkan elemen DOM
 const refreshShopUI = () => {
     const state = getState();
     
-    // 1. Update teks Gold di atas layar
     const goldDisplay = document.getElementById('player-gold');
     if (goldDisplay) goldDisplay.innerText = state.profile.gold.toLocaleString();
 
-    // 2. Cek ulang semua tombol item normal, matikan jika Gold tidak cukup atau Stamina Penuh
     document.querySelectorAll('.btn-buy').forEach(btn => {
         const itemKey = btn.dataset.item;
         const itemData = SHOP_ITEMS[itemKey];
-        const currentPrice = parseInt(btn.dataset.price) || itemData.price;
+        const currentPrice = parseFloat(btn.dataset.price) || itemData.price;
 
         let canAfford = false;
         if (itemData.isSOL) {
-            canAfford = true; // Web3 akan dicek oleh Phantom
+            canAfford = true; 
         } else {
             canAfford = state.profile.gold >= currentPrice;
         }
@@ -76,7 +73,6 @@ const refreshShopUI = () => {
 
         btn.disabled = (!canAfford && !itemData.isSOL) || isStaminaFull;
 
-        // [OPTIMASI UI]: Tombol Abu-abu (Disabled State) yang Dinamis
         if (isStaminaFull) {
             btn.innerText = 'MAXED';
             btn.style.background = '#30363d';
@@ -105,7 +101,6 @@ const refreshShopUI = () => {
             }
         }
 
-        // Perbarui nominal harga Stamina jika berubah
         if (itemKey === 'STAMINA_REFILL') {
             const priceEl = document.getElementById(`price-${itemKey}`);
             if (priceEl) {
@@ -138,13 +133,13 @@ export const initShop = () => {
     list.appendChild(catItem); 
     list.appendChild(catEquip);
 
-    // === RENDER 4 TIER GACHA (HARGA DIUBAH KE SOL) ===
+    // [UPDATE MAINNET] Harga Gacha disesuaikan dengan skala Mainnet (Lebih kecil)
     const CRATES = [
-    { id: 1, name: "BASIC CRATE", cost: 0.005, color: "#a0a0a0", desc: "Low chance for good items. Normal quantity." },
-    { id: 2, name: "ADVANCED CRATE", cost: 0.01, color: "#3498db", desc: "Better odds. Higher material drops." },
-    { id: 3, name: "ELITE CRATE", cost: 0.02, color: "#9b59b6", desc: "Excellent chances for Epic & Mythic drops." },
-    { id: 4, name: "SUPREME CRATE", cost: 0.05, color: "#ffca28", desc: "Top Tier! No Commons. High Legendary chance!" }
-];
+        { id: 1, name: "BASIC CRATE", cost: 0.005, color: "#a0a0a0", desc: "Low chance for good items. Normal quantity." },
+        { id: 2, name: "ADVANCED CRATE", cost: 0.01, color: "#3498db", desc: "Better odds. Higher material drops & stats." },
+        { id: 3, name: "ELITE CRATE", cost: 0.02, color: "#9b59b6", desc: "Excellent chances for Epic & Mythic drops." },
+        { id: 4, name: "SUPREME CRATE", cost: 0.05, color: "#ffca28", desc: "Top Tier! No Commons. High Legendary chance!" }
+    ];
 
     CRATES.forEach(crate => {
         let btnStyle = `background:${crate.color}; color:#000; font-weight:900; letter-spacing:1px; box-shadow: 0 0 10px ${crate.color}; transition: all 0.3s;`;
@@ -181,7 +176,6 @@ export const initShop = () => {
         });
     }, 50);
 
-    // === RENDER TOKO NORMAL ===
     Object.keys(SHOP_ITEMS).forEach(key => {
         const item = SHOP_ITEMS[key];
         let isStamina = (key === 'STAMINA_REFILL');
@@ -228,9 +222,8 @@ export const initShop = () => {
         if (isStamina) subtext = `<div style="color:var(--emerald); font-size:9px; margin-top:2px;">Cost: 200 G / Point</div>`;
         if (isSOL) subtext = `<div style="color:var(--gold); font-size:9px; margin-top:2px;">Payment via Solana Network</div>`;
 
-        let priceText = isStaminaFull ? 'FULL' : (isSOL ? displayPrice.toFixed(1) : displayPrice.toLocaleString()) + ' ' + currencyLabel;
+        let priceText = isStaminaFull ? 'FULL' : (isSOL ? displayPrice.toFixed(2) : displayPrice.toLocaleString()) + ' ' + currencyLabel;
 
-        // [OPTIMASI UI]: Styling Dinamis Tombol Saat Render Pertama
         let btnText = isStaminaFull ? 'MAXED' : 'BUY';
         let btnBg = '';
         let btnColor = '';
@@ -280,7 +273,6 @@ export const initShop = () => {
         else document.getElementById('shop-cat-equip').appendChild(itemEl);
     });
 
-    // Event Listener Input & Tombol Minus Plus
     document.querySelectorAll('.shop-qty-input').forEach(inputEl => {
         inputEl.oninput = (e) => {
             const itemKey = e.target.id.replace('qty-', '');
@@ -292,7 +284,7 @@ export const initShop = () => {
             let currentVal = parseInt(e.target.value);
             if (!isMaterial && currentVal > 99) { e.target.value = 99; currentVal = 99; showToast("LIMIT: 99 ITEMS", "#ff4444"); }
             const calcVal = (isNaN(currentVal) || currentVal < 1) ? 1 : currentVal;
-            if (priceEl) priceEl.innerText = (item.isSOL ? (item.price * calcVal).toFixed(1) : (item.price * calcVal).toLocaleString()) + ' ' + currency;
+            if (priceEl) priceEl.innerText = (item.isSOL ? (item.price * calcVal).toFixed(2) : (item.price * calcVal).toLocaleString()) + ' ' + currency;
         };
         inputEl.onchange = (e) => { let currentVal = parseInt(e.target.value); if (isNaN(currentVal) || currentVal < 1) e.target.value = 1; };
     });
@@ -317,11 +309,10 @@ export const initShop = () => {
             }
             
             inputEl.value = currentVal;
-            if (priceEl) priceEl.innerText = (item.isSOL ? (item.price * currentVal).toFixed(1) : (item.price * currentVal).toLocaleString()) + ' ' + currency;
+            if (priceEl) priceEl.innerText = (item.isSOL ? (item.price * currentVal).toFixed(2) : (item.price * currentVal).toLocaleString()) + ' ' + currency;
         };
     });
 
-    // Event Listener Pembelian
     document.querySelectorAll('.btn-buy').forEach(btn => {
         btn.onclick = () => {
             if (isProcessingShop) return; 
@@ -346,9 +337,10 @@ export const initShop = () => {
                     return;
                 }
 
+                // [FIX DEVNET]: Teks dihapus, sekarang murni Mainnet!
                 showShopPopup(
                     "WEB3 SMART CONTRACT", 
-                    `Initiate secure blockchain transfer for <br><strong class="text-emerald">${itemData.name}</strong><br>Cost: <strong class="text-gold">${totalCost} SOL (Devnet)</strong>? <br><br><span style="font-size:10px; color:#8b949e;">Requires Wallet Signature.</span>`, 
+                    `Initiate secure blockchain transfer for <br><strong class="text-emerald">${itemData.name}</strong><br>Cost: <strong class="text-gold">${totalCost} SOL</strong>? <br><br><span style="font-size:10px; color:#8b949e;">Requires Wallet Signature.</span>`, 
                     true, 
                     async () => {
                         isProcessingShop = true;
@@ -369,7 +361,6 @@ export const initShop = () => {
                 return; 
             }
 
-            // Pembelian Item Biasa Pakai Gold
             showShopPopup(
                 "CONFIRM PURCHASE", 
                 `Purchase <strong class="text-emerald">${qty}x ${itemData.name}</strong> for <strong class="text-gold">${totalCost.toLocaleString()} ${currency}</strong>?`, 
@@ -392,7 +383,6 @@ export const initShop = () => {
                     if (result.success) {
                         if(typeof playSFX === 'function') playSFX('sell');
                         
-                        // [EFEK VISUAL: Animasi Sukses pada Tombol]
                         btn.innerText = 'DONE';
                         btn.style.background = '#2ecc71';
                         setTimeout(() => { refreshShopUI(); }, 500);
@@ -408,9 +398,6 @@ export const initShop = () => {
     });
 };
 
-// ===============================================
-// LOGIKA MESIN GACHA (LANGSUNG MEMOTONG SOL DARI DOMPET)
-// ===============================================
 const handleGachaRoll = (crateId, cost) => {
     const state = getState();
 
@@ -423,6 +410,7 @@ const handleGachaRoll = (crateId, cost) => {
     const crateNames = ["BASIC CRATE", "ADVANCED CRATE", "ELITE CRATE", "SUPREME CRATE"];
     const crateName = crateNames[crateId - 1];
 
+    // [FIX DEVNET]: Teks dihapus, sekarang murni Mainnet!
     showShopPopup(
         `CONFIRM GACHA (WEB3)`, 
         `Are you sure you want to buy <strong>${crateName}</strong> for <strong style="color:var(--gold);">${cost} SOL</strong>?<br><br><span style="font-size:10px; color:#ff4444;">WARNING: Requires Wallet Signature. Items are random.</span>`, 
@@ -578,9 +566,6 @@ const handleGachaRoll = (crateId, cost) => {
     );
 };
 
-// ===============================================
-// [EFEK VISUAL] ANIMASI GACHA CYBERPUNK
-// ===============================================
 const showUnboxingAnimation = (onComplete) => {
     const exist = document.getElementById('shop-popup'); if(exist) exist.remove();
     const overlay = document.createElement('div'); overlay.id = 'shop-popup'; overlay.className = 'modal-overlay z-alert';
@@ -619,10 +604,8 @@ const showUnboxingAnimation = (onComplete) => {
         if (progress > 100) progress = 100;
         bar.style.width = `${progress}%`;
         
-        // Animasi Crate Bergetar Hebat
         crate.style.transform = `translate(${Math.random()*6-3}px, ${Math.random()*6-3}px) scale(${1 + progress/300})`;
         
-        // Teks Glitch Hacker
         if(Math.random() > 0.6) decryptText.innerText = Math.random().toString(36).substring(2, 10).toUpperCase();
         else decryptText.innerText = "DECRYPTING...";
 
