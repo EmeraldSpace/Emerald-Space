@@ -43,12 +43,31 @@ export const connectWallet = async (walletType) => {
     try {
         if (walletType === 'privy' || walletType === 'telegram') {
             await initPrivy();
-            // Triggers Privy popup (allows direct Telegram login)
-            const user = await privyClient.login();
-            if (user && user.linkedAccounts) {
+            
+            // 1. Triggers Privy popup (allows direct Telegram/Email login)
+            await privyClient.login();
+            
+            // 2. Fetch user data directly from Privy memory after popup closes
+            const user = privyClient.user;
+
+            if (user) {
+                // (OPTIONAL) The actual Privy Account ID (format: did:privy:...)
+                const privyUserId = user.id; 
+                console.log("🚀 Privy User ID:", privyUserId);
+
+                // 3. Find the Solana wallet automatically created by Privy (Embedded Wallet)
                 const solanaAccount = user.linkedAccounts.find(acc => acc.type === 'wallet' && acc.chainType === 'solana');
-                return solanaAccount ? solanaAccount.address : null;
+                
+                if (solanaAccount) {
+                    console.log("🌌 Privy Solana Wallet:", solanaAccount.address);
+                    return solanaAccount.address; 
+                } else {
+                    throw new Error("Privy failed to create an embedded Solana wallet.");
+                }
+            } else {
+                throw new Error("Login process cancelled or failed.");
             }
+            
         } else if (walletType === 'phantom') {
             if (window.phantom && window.phantom.solana) {
                 const resp = await window.phantom.solana.connect();
