@@ -140,11 +140,11 @@ export const initShop = () => {
 
     // === RENDER 4 TIER GACHA (HARGA DIUBAH KE SOL) ===
     const CRATES = [
-        { id: 1, name: "BASIC CRATE", cost: 0.05, color: "#a0a0a0", desc: "Low chance for good items. Normal quantity." },
-        { id: 2, name: "ADVANCED CRATE", cost: 0.1, color: "#3498db", desc: "Better odds. Higher material drops & stats." },
-        { id: 3, name: "ELITE CRATE", cost: 0.2, color: "#9b59b6", desc: "Excellent chances for Epic & Mythic drops." },
-        { id: 4, name: "SUPREME CRATE", cost: 0.5, color: "#ffca28", desc: "Top Tier! No Commons. High Legendary chance!" }
-    ];
+    { id: 1, name: "BASIC CRATE", cost: 0.005, color: "#a0a0a0", desc: "Low chance for good items. Normal quantity." },
+    { id: 2, name: "ADVANCED CRATE", cost: 0.01, color: "#3498db", desc: "Better odds. Higher material drops." },
+    { id: 3, name: "ELITE CRATE", cost: 0.02, color: "#9b59b6", desc: "Excellent chances for Epic & Mythic drops." },
+    { id: 4, name: "SUPREME CRATE", cost: 0.05, color: "#ffca28", desc: "Top Tier! No Commons. High Legendary chance!" }
+];
 
     CRATES.forEach(crate => {
         let btnStyle = `background:${crate.color}; color:#000; font-weight:900; letter-spacing:1px; box-shadow: 0 0 10px ${crate.color}; transition: all 0.3s;`;
