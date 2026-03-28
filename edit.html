@@ -24,6 +24,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
 <script src="https://unpkg.com/@solana/spl-token@0.3.8/lib/index.iife.min.js"></script>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://unpkg.com/@privy-io/privy-browser@latest/dist/index.umd.js"></script>
+
 
 <script>
     window.onerror = function(msg, url, line) {
@@ -428,12 +431,20 @@
             💡 <b>Pro Tip:</b> We highly recommend using a fresh <b>Burner Wallet</b> with zero balance for beta testing games. Stay safe!
         </p>
         
-        <button id="btn-phantom-select" class="btn-action outline" style="width: 100%; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; border-color: #512da8; color: white; background:transparent;">
+        <!-- [UPDATE]: Tombol Privy / Telegram -->
+        <button class="btn-connect-option btn-action outline" data-wallet="privy" style="width: 100%; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; border-color: #00eaff; color: white; background:transparent;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#00eaff"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.21-1.12-.33-1.08-.7.02-.19.27-.39.75-.59 2.95-1.29 4.93-2.14 5.92-2.55 2.81-1.16 3.4-1.37 3.79-1.37.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.13 0 .21z"></path></svg>
+            LOGIN VIA TELEGRAM / EMAIL
+        </button>
+
+        <!-- [UPDATE]: Tombol Phantom dengan class btn-connect-option dan data-wallet -->
+        <button class="btn-connect-option btn-action outline" data-wallet="phantom" style="width: 100%; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; border-color: #512da8; color: white; background:transparent;">
             <img src="source/icon/phantom.png" alt="Phantom" style="width: 20px; height: 20px;">
             CONNECT PHANTOM
         </button>
         
-        <button id="btn-solflare-select" class="btn-action outline" style="width: 100%; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; border-color: var(--gold); color: white; background:transparent;">
+        <!-- [UPDATE]: Tombol Solflare dengan class btn-connect-option dan data-wallet -->
+        <button class="btn-connect-option btn-action outline" data-wallet="solflare" style="width: 100%; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; border-color: var(--gold); color: white; background:transparent;">
             <img src="source/icon/solflare.png" alt="Solflare" style="width: 20px; height: 20px;">
             CONNECT SOLFLARE
         </button>
@@ -448,7 +459,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             // SETTING JADWAL MAINNET (WAKTU GLOBAL / UTC)
-            const launchDateString = "March 28, 2026 12:00:00 UTC"; 
+            const launchDateString = "April 26, 2026 12:00:00 UTC"; 
             const targetDate = new Date(launchDateString).getTime();
 
             const updateCountdown = () => {
