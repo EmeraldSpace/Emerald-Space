@@ -8,7 +8,7 @@ import { playSFX } from './audio.js';
 // Highly recommended to change this NETWORK to a paid RPC (Helius/Quicknode) for official release
 const NETWORK = 'https://api.mainnet-beta.solana.com'; 
 const ADMIN_WALLET = 'ExNJ84TBmLsy7FB4duYteK5bWXEEuofSStPHCcA7TeQc'; // REPLACE WITH YOUR SOLANA WALLET!
-const PRIVY_APP_ID = 'YOUR_PRIVY_APP_ID_HERE'; // Get from dashboard.privy.io
+const PRIVY_APP_ID = 'cmnam2ras00gj0cl22pik3xih'; 
 
 let privyClient = null;
 
