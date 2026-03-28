@@ -28,7 +28,7 @@ const showLootToast = (message) => {
     setTimeout(() => toast.remove(), 3000);
 };
 
-// === [BARU] SISTEM REGEN STAMINA & HP (SETIAP 5 MENIT) ===
+// === [BARU] SISTEM REGEN STAMINA & HP (SETIAP 2 MENIT) ===
 setInterval(() => {
     const state = getState();
     if (!state || !state.profile) return;
@@ -52,7 +52,8 @@ setInterval(() => {
     }
     let curHp = up.currentHp !== undefined ? up.currentHp : maxHp;
 
-    const REGEN_MS = 5 * 60 * 1000; // 5 menit dalam milidetik
+    // [UPDATE MAINNET] Dipercepat dari 5 menit ke 2 menit (120,000 ms)
+    const REGEN_MS = 2 * 60 * 1000; 
 
     // Jika Stamina belum penuh ATAU HP belum penuh
     if (curS < maxS || curHp < maxHp) {
@@ -64,11 +65,11 @@ setInterval(() => {
             if (elapsed >= REGEN_MS) {
                 const gain = Math.floor(elapsed / REGEN_MS);
                 
-                // 1. Pulihkan Stamina (+1 per 5 menit)
+                // 1. Pulihkan Stamina (+1 per 2 menit)
                 curS = Math.min(maxS, curS + gain);
                 up.stamina = curS;
                 
-                // 2. Pulihkan HP Kapal (+10% per 5 menit)
+                // 2. Pulihkan HP Kapal (+10% per 2 menit)
                 const hpGain = Math.floor(maxHp * 0.1) * gain;
                 curHp = Math.min(maxHp, curHp + Math.max(1, hpGain));
                 up.currentHp = curHp;
@@ -106,7 +107,8 @@ export const handleAttack = async (monster, event) => {
     const initialState = getState();
     const curStamina = initialState.profile.stamina !== undefined ? initialState.profile.stamina : 50;
     
-    if (curStamina < 5) return showStaminaWarning("WARNING", "Stamina Depleted! Wait for recovery or refill in Shop.");
+    // [UPDATE MAINNET] Syarat Stamina diturunkan dari 5 ke 2
+    if (curStamina < 2) return showStaminaWarning("WARNING", "Stamina Depleted! Wait for recovery or refill in Shop.");
 
     isProcessingAttack = true;
     let originalBtnText = "ATTACK";
@@ -151,7 +153,8 @@ export const handleAttack = async (monster, event) => {
         const up = { ...freshState.profile };
         
         up.gold += result.goldGained; 
-        up.stamina = curStamina - 5;
+        // [UPDATE MAINNET] Pengurangan Stamina diturunkan dari 5 ke 2
+        up.stamina = curStamina - 2;
         if (up.currentHp === undefined) up.currentHp = realStats.hp;
         if (result.monsterDamage > 0) up.currentHp -= result.monsterDamage;
 
@@ -327,7 +330,8 @@ export const updateTopBar = () => {
     const hangarTimerEl = document.getElementById('hangar-recovery-timer');
     if ((curS < maxS || curHp < maxHp) && state.profile.lastStaminaRegen) {
         const elapsed = Date.now() - state.profile.lastStaminaRegen;
-        const timeToNext = Math.max(0, (5 * 60 * 1000) - elapsed);
+        // [UPDATE MAINNET] Sync top bar timer to 2 minutes
+        const timeToNext = Math.max(0, (2 * 60 * 1000) - elapsed);
         
         const m = String(Math.floor((timeToNext % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
         const s = String(Math.floor((timeToNext % (1000 * 60)) / 1000)).padStart(2, '0');
