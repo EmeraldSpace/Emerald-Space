@@ -1,10 +1,10 @@
 /* =========================================
-   HANGAR UI CONTROLLER - POLISHED (BOUNTY BOARD)
+   HANGAR UI CONTROLLER - POLISHED (BOUNTY BOARD & REFERRAL)
    ========================================= */
 import { getState, updateState } from '../logic/state.js';
 import { SHIPS } from '../data/ships.js';
 import { calculateFinalStats } from '../logic/hangar.js';
-import { playSFX } from '../logic/audio.js'; // Tambahkan ini agar efek suara jalan!
+import { playSFX } from '../logic/audio.js'; 
 
 export const initHangar = () => {
     const state = getState();
@@ -68,7 +68,6 @@ export const initHangar = () => {
     const statsGrid = document.createElement('div');
     statsGrid.className = 'hangar-stats-grid';
 
-    // DIKEMBALIKAN KE IKON ASLI DAN WARNA ASLI
     const stats = [
         { label: 'ATTACK', base: baseAtk, lvl: lvlBonusAtk, eq: bonus.atk, maxVis: 300, color: '#ff4444', icon: 'source/icon/attack.png' },
         { label: 'DEFENSE', base: baseDef, lvl: lvlBonusDef, eq: bonus.def, maxVis: 150, color: '#44ff44', icon: 'source/icon/defense.png' },
@@ -151,7 +150,6 @@ export const initHangar = () => {
         const repairCost = missingHp * 10; 
         const repairBtn = document.createElement('button');
         repairBtn.className = 'btn-repair-hangar'; 
-        // [TETAP PAKAI IKON BARU] Ikon Tombol Repair
         repairBtn.innerHTML = `<img src="source/icon/sub/repair.png" style="width:14px; vertical-align:-2px; margin-right:6px;">REPAIR HP (${repairCost} G)`;
         
         repairBtn.onclick = () => {
@@ -198,7 +196,7 @@ export const initHangar = () => {
     }
 
     // ============================================
-    // NEW: CYBERPUNK BOUNTY BOARD (DAILY QUEST)
+    // CYBERPUNK BOUNTY BOARD (DAILY QUEST)
     // ============================================
     const qProgress = state.profile.questProgress || 0;
     const qClaimed = state.profile.questClaimed || false;
@@ -208,15 +206,12 @@ export const initHangar = () => {
     const questPanel = document.createElement('div');
     questPanel.className = 'sci-fi-panel';
     
-    // Styling Dasar Panel Bounty
     let panelStyle = 'margin-top: 15px; padding: 15px; border-radius: 8px; text-align: left; position: relative; overflow: hidden;';
 
     let questContent = '';
 
     if (qClaimed) {
-        // STATE 1: MISI SUDAH DIAMBIL (SELESAI HARI INI)
         questPanel.style.cssText = panelStyle + 'background: #0d1117; border: 1px solid #30363d; opacity: 0.6;';
-        // [TETAP PAKAI IKON BARU] Checkmark Selesai
         questContent = `
             <div style="display:flex; justify-content:space-between; align-items:center; filter: grayscale(1);">
                 <div>
@@ -233,21 +228,18 @@ export const initHangar = () => {
         questPanel.innerHTML = questContent;
 
     } else if (qProgress >= qTarget) {
-        // STATE 2: MISI SELESAI & SIAP KLAIM (HIJAU MENYALA)
-        questPanel.style.cssText = panelStyle + 'background: rgba(46, 204, 113, 0.1); border: 1px solid var(--emerald); box-shadow: 0 0 20px rgba(46, 204, 113, 0.2);';
-        // [TETAP PAKAI IKON BARU] Target Danger Selesai
+        questPanel.style.cssText = panelStyle + 'background: rgba(0, 152, 234, 0.1); border: 1px solid #0098EA; box-shadow: 0 0 20px rgba(0, 152, 234, 0.2);';
         questContent = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <div style="color:var(--emerald); font-size:14px; font-weight:900; letter-spacing:1px; text-shadow: 0 0 10px var(--emerald);">
-                    <img src="source/icon/sub/danger.png" style="width:14px; vertical-align:-2px; margin-right:4px; filter: hue-rotate(120deg);">TARGETS ELIMINATED
+                <div style="color:#0098EA; font-size:14px; font-weight:900; letter-spacing:1px; text-shadow: 0 0 10px #0098EA;">
+                    <img src="source/icon/sub/danger.png" style="width:14px; vertical-align:-2px; margin-right:4px; filter: hue-rotate(200deg);">TARGETS ELIMINATED
                 </div>
-                <div style="background:var(--emerald); color:#000; font-size:9px; font-weight:900; padding:3px 8px; border-radius:4px; box-shadow: 0 0 10px var(--emerald);">READY</div>
+                <div style="background:#0098EA; color:#fff; font-size:9px; font-weight:900; padding:3px 8px; border-radius:4px; box-shadow: 0 0 10px #0098EA;">READY</div>
             </div>
-            <button id="btn-claim-quest" class="btn-action green mb-0" style="padding:12px; font-size:14px; width:100%; font-weight:900; animation: pulse 1.5s infinite; letter-spacing: 1px; color:#000;">CLAIM BOUNTY REWARD</button>
+            <button id="btn-claim-quest" class="btn-action mb-0" style="background:#0098EA; padding:12px; font-size:14px; width:100%; font-weight:900; animation: pulse 1.5s infinite; letter-spacing: 1px; color:#fff; box-shadow:0 0 15px #0098EA; border:none;">CLAIM BOUNTY REWARD</button>
         `;
         questPanel.innerHTML = questContent;
         
-        // Logika Tombol Klaim
         setTimeout(() => {
             const btnClaim = document.getElementById('btn-claim-quest');
             if (btnClaim) {
@@ -264,15 +256,14 @@ export const initHangar = () => {
                     const goldDisplay = document.getElementById('player-gold');
                     if(goldDisplay) goldDisplay.innerText = up.gold.toLocaleString();
 
-                    // Pop Up Kemenangan Keren
                     const exist = document.getElementById('quest-popup'); if(exist) exist.remove();
                     const overlay = document.createElement('div'); overlay.id = 'quest-popup'; overlay.className = 'modal-overlay z-alert';
                     overlay.innerHTML = `
-                        <div class="modal-box" style="border-color: var(--emerald); box-shadow: 0 0 30px rgba(46, 204, 113, 0.4); background:#0d1117; text-align:center;">
-                            <h3 class="modal-title" style="color:var(--emerald); text-shadow: 0 0 10px var(--emerald);">BOUNTY SECURED!</h3>
-                            <img src="source/icon/loot.png" style="width:60px; height:60px; margin: 10px 0; filter: drop-shadow(0 0 10px var(--emerald));">
+                        <div class="modal-box" style="border-color: #0098EA; box-shadow: 0 0 30px rgba(0, 152, 234, 0.4); background:#0d1117; text-align:center;">
+                            <h3 class="modal-title" style="color:#0098EA; text-shadow: 0 0 10px #0098EA;">BOUNTY SECURED!</h3>
+                            <img src="source/icon/loot.png" style="width:60px; height:60px; margin: 10px 0; filter: drop-shadow(0 0 10px #0098EA);">
                             <p class="modal-text" style="color:#e6edf3; font-size:13px;">Funds transferred to your account:<br><br><strong style="color:var(--gold); font-size:16px;">+15,000 G</strong><br><strong style="color:#8b949e; font-size:14px;">+15 Iron Ore</strong></p>
-                            <button id="btn-q-ok" class="btn-action green mb-0 text-black" style="width:100%;">EXCELLENT</button>
+                            <button id="btn-q-ok" class="btn-action text-white" style="background:#0098EA; width:100%; font-weight:bold; box-shadow:0 0 10px #0098EA;">EXCELLENT</button>
                         </div>`;
                     document.body.appendChild(overlay);
                     document.getElementById('btn-q-ok').onclick = () => { if(typeof playSFX === 'function') playSFX('click'); overlay.remove(); };
@@ -281,9 +272,7 @@ export const initHangar = () => {
         }, 50);
 
     } else {
-        // STATE 3: MISI SEDANG BERJALAN (KUNING / ORANYE)
         questPanel.style.cssText = panelStyle + 'background: rgba(255, 202, 40, 0.05); border: 1px dashed var(--gold);';
-        // [TETAP PAKAI IKON BARU] Quest Scroll
         questContent = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <div style="color:var(--gold); font-size:13px; font-weight:900; letter-spacing:1px; display:flex; align-items:center; gap:5px;">
@@ -312,6 +301,78 @@ export const initHangar = () => {
     }
     
     dashBoard.appendChild(questPanel);
+
+    // ============================================
+    // ALLIANCE RECRUITMENT (REFERRAL SYSTEM)
+    // ============================================
+    const inviteCount = state.profile.inviteCount || 0;
+    const maxInvites = 25;
+    const refPct = Math.min((inviteCount / maxInvites) * 100, 100);
+    
+    // [UPDATE] Menggunakan Telegram ID sebagai prioritas utama
+    let refId = state.profile.telegram_id;
+    if (!refId && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+        refId = window.Telegram.WebApp.initDataUnsafe.user.id;
+    }
+    if (!refId) refId = state.profile.walletAddress || "CONNECT_WALLET";
+
+    // PENTING: Ganti "EmeraldSpace_Bot" ini jika username bot Anda berbeda
+    const botUsername = "EmeraldSpace_Bot"; 
+    
+    // Link spesial Telegram
+    const inviteLink = `https://t.me/${botUsername}/play?startapp=${refId}`;
+    
+    const refPanel = document.createElement('div');
+    refPanel.className = 'sci-fi-panel';
+    refPanel.style.cssText = 'margin-top: 15px; padding: 15px; border-radius: 8px; background: rgba(52, 152, 219, 0.05); border: 1px dashed #3498db; text-align: left; position: relative; margin-bottom: 20px;';
+
+    refPanel.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="color:#3498db; font-size:13px; font-weight:900; letter-spacing:1px; display:flex; align-items:center; gap:5px; text-shadow:0 0 5px rgba(52, 152, 219, 0.5);">
+                <img src="source/icon/sub/vip.png" style="width:16px;"> ALLIANCE RECRUIT
+            </div>
+            <div style="border:1px solid #3498db; color:#3498db; font-size:9px; font-weight:bold; padding:2px 6px; border-radius:3px; background:rgba(52,152,219,0.1);">EARN 5,000 G</div>
+        </div>
+        
+        <p style="color:#e6edf3; font-size:11px; margin-bottom:12px; line-height:1.5;">
+            Invite new pilots to join the fleet. Earn <strong style="color:var(--gold);">+5,000 G</strong> when they reach <strong>Lv. 6</strong>!
+        </p>
+
+        <div style="background:#0d1117; border-radius:6px; height:16px; width:100%; border:1px solid #30363d; position:relative; overflow:hidden; margin-bottom:12px; box-shadow: inset 0 0 10px #000;">
+            <div style="background:linear-gradient(90deg, #1f4b6e, #3498db); width:${refPct}%; height:100%; box-shadow:0 0 10px #3498db; transition: width 0.5s ease-out;"></div>
+            <div style="position:absolute; top:0; left:0; width:100%; height:100%; text-align:center; font-size:10px; font-weight:900; color:#fff; line-height:16px; text-shadow:0 0 4px #000;">
+                ${inviteCount} / ${maxInvites} RECRUITS
+            </div>
+        </div>
+
+        <button id="btn-copy-invite" class="btn-action" style="width:100%; background:transparent; border:1px solid #3498db; color:#3498db; font-weight:bold; padding:10px; border-radius:6px; transition:0.2s; margin-bottom:0;">
+            📋 COPY INVITE LINK
+        </button>
+    `;
+    
+    dashBoard.appendChild(refPanel);
+
+    // Fungsionalitas Copy Link
+    setTimeout(() => {
+        const btnCopy = document.getElementById('btn-copy-invite');
+        if (btnCopy) {
+            btnCopy.onclick = () => {
+                if(typeof playSFX === 'function') playSFX('click');
+                navigator.clipboard.writeText(`Play Emerald Space with me and earn Crypto! 🚀🌌\n\n${inviteLink}`);
+                
+                btnCopy.innerText = "✅ LINK COPIED!";
+                btnCopy.style.background = "#3498db";
+                btnCopy.style.color = "#000";
+                
+                setTimeout(() => {
+                    btnCopy.innerText = "📋 COPY INVITE LINK";
+                    btnCopy.style.background = "transparent";
+                    btnCopy.style.color = "#3498db";
+                }, 2000);
+            };
+        }
+    }, 50);
+
     hangarScreen.appendChild(dashBoard);
 };
 
