@@ -254,7 +254,7 @@ const checkAccountSetup = () => {
 };
 
 // ==========================================
-// SOLANA CONNECT LISTENER (MULTI-WALLET POPUP)
+// SOLANA CONNECT LISTENER 
 // ==========================================
 const btnOpenPopup = document.getElementById('btn-open-wallet-popup');
 const walletStatusDiv = document.getElementById('wallet-status');
@@ -330,28 +330,24 @@ async function handleWalletSelection(walletType) {
         }
 
         let inviterWallet = null;
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-            const startParam = window.Telegram.WebApp.initDataUnsafe.start_param;
-            if (startParam && startParam !== currentWalletAddr) {
-                inviterWallet = startParam;
-            }
+        
+        // Cek Referral dari URL Parameter Website Murni
+        const urlParams = new URLSearchParams(window.location.search);
+        const webRef = urlParams.get('ref');
+        if (webRef && webRef !== currentWalletAddr) {
+            inviterWallet = webRef;
         }
 
         if (inviterWallet) {
             await setReferrer(currentWalletAddr, inviterWallet);
         }
         
-        let myTelegramId = null;
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-            myTelegramId = window.Telegram.WebApp.initDataUnsafe.user.id.toString();
-        }
-
+        // Simpan User (Tidak butuh Telegram ID lagi untuk web version, kosongkan saja)
         const state = getState();
         updateState({ 
             profile: { 
                 ...state.profile, 
-                walletAddress: currentWalletAddr,
-                telegram_id: myTelegramId 
+                walletAddress: currentWalletAddr
             } 
         });
 
@@ -428,16 +424,11 @@ const initAbout = async () => {
             if(typeof playSFX === 'function') playSFX('click');
             const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
 
-            let playerId = "UNKNOWN";
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-                playerId = window.Telegram.WebApp.initDataUnsafe.user.id;
-            } else {
-                const state = getState();
-                playerId = state.profile.walletAddress || "PLEASE_CONNECT_WALLET_FIRST";
-            }
+            const state = getState();
+            let playerId = state.profile.walletAddress || "PLEASE_CONNECT_WALLET_FIRST";
 
-            const botUsername = "EmeraldSpace_bot"; 
-            const refLink = `https://t.me/${botUsername}/play?startapp=${playerId}`;
+            // UBAH JADI LINK WEBSITE MURNI
+            const refLink = `https://emerald-space.site/?ref=${playerId}`;
 
             const overlay = document.createElement('div');
             overlay.id = 'scifi-popup';
@@ -696,7 +687,6 @@ const initAbout = async () => {
             }
 
         } catch (err) {
-            // Error handling
             if (oldPrizePoolEl) {
                 oldPrizePoolEl.innerHTML = `
                     <div style="color: #14F195; font-size: 22px; font-weight: 900;">0.00 SOL</div>
