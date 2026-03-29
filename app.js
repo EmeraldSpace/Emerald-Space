@@ -32,7 +32,7 @@ window.copyAddress = (targetId) => {
     const toast = document.createElement('div');
     toast.id = 'sys-toast';
     toast.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#14F195; color:#000; padding:10px 20px; border-radius:6px; font-weight:900; font-size:12px; z-index:99999; box-shadow:0 0 15px #14F195; transition: opacity 0.5s ease-in-out; text-transform:uppercase; letter-spacing:1px;';
-    toast.innerHTML = '📋‹ COPIED!';
+    toast.innerHTML = '📋 COPIED!';
     document.body.appendChild(toast);
     
     setTimeout(() => toast.style.opacity = '0', 2000);
@@ -662,7 +662,6 @@ const initAbout = async () => {
         if (popupPrizePoolEl) popupPrizePoolEl.innerText = "CALCULATING...";
 
         try {
-            // Kita gunakan fungsi API solana secara manual karena getAddressBalance milik toncenter tidak berfungsi untuk SOL
             const adminWallet = 'ExNJ84TBmLsy7FB4duYteK5bWXEEuofSStPHCcA7TeQc';
             const req = await fetch('https://mainnet.helius-rpc.com/?api-key=79850b9a-0b16-45cc-9ff8-b38375ea7d14', {
                 method: 'POST',
