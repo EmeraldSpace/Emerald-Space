@@ -1,5 +1,5 @@
 /* =========================================
-   GLOBAL STATE MANAGEMENT - FULL SUPABASE SYNC (V5.1)
+   GLOBAL STATE MANAGEMENT - TON NETWORK SYNC (V5.2)
    ========================================= */
 
 export const SHIPS = {
@@ -17,11 +17,13 @@ export const initialState = {
     profile: {
         level: 1, xp: 0, gold: 10000, iron_ore: 0, dark_energy: 0, 
         shipClass: 'INTERCEPTOR', isElite: false,
-        stamina: 50, maxStamina: 50, currentHp: 100, walletAddress: null
+        stamina: 50, maxStamina: 50, currentHp: 200, walletAddress: null,
+        telegram_id: null, // Properti baru untuk Telegram ID
+        referred_by: null  // Properti baru untuk ID pengundang
     },
     inventory: [],
     equipped: { weapon: null, hull: null, shield: null, engine: null, cpu: null },
-    currentStats: { hp: 100, maxHp: 100, atk: 10, def: 5, speed: 50, powerScore: 0 },
+    currentStats: { hp: 200, maxHp: 200, atk: 50, def: 10, speed: 80, powerScore: 0 },
     metadata: { lastLocationId: 1 }
 };
 
@@ -50,7 +52,9 @@ export const loadStateFromServer = async (walletAddress) => {
                 ...currentState.profile,
                 id: profile.id,
                 username: profile.username,
-                walletAddress: profile.solana_wallet || currentState.profile.walletAddress, 
+                walletAddress: profile.ton_wallet || profile.wallet_address, 
+                telegram_id: profile.telegram_id || null, // Memuat Telegram ID
+                referred_by: profile.referred_by || null, // Memuat ID Pengundang
                 level: profile.level ?? 1,
                 xp: profile.xp ?? 0,
                 maxXp: profile.max_xp ?? 100,
@@ -59,10 +63,10 @@ export const loadStateFromServer = async (walletAddress) => {
                 dark_energy: profile.dark_energy ?? 0,
                 stamina: profile.stamina ?? 50,
                 maxStamina: profile.max_stamina ?? 50,
-                currentHp: profile.current_hp ?? 100,
+                currentHp: profile.current_hp ?? 200,
                 shipClass: profile.ship_class ?? 'INTERCEPTOR',
                 nextFullRegen: profile.next_full_regen ?? null,
-                isElite: profile.is_elite ?? false // [PATCH]: Pull VIP status from database
+                isElite: profile.is_elite ?? false
             };
 
             const { data: invItems, error: iError } = await supabase
@@ -115,7 +119,9 @@ const syncProfile = async (p) => {
     try {
         const payload = {
             wallet_address: currentUserAddress, 
-            solana_wallet: p.walletAddress || currentState.profile.walletAddress || null, 
+            ton_wallet: p.walletAddress || currentState.profile.walletAddress || null, 
+            telegram_id: p.telegram_id || currentState.profile.telegram_id || null, // Push Telegram ID
+            referred_by: p.referred_by || currentState.profile.referred_by || null, // Push Referrer ID
             username: username,
             ship_class: p.shipClass || currentState.profile.shipClass,
             level: p.level ?? currentState.profile.level,
@@ -128,7 +134,7 @@ const syncProfile = async (p) => {
             stamina: p.stamina ?? currentState.profile.stamina,
             max_stamina: p.maxStamina ?? currentState.profile.maxStamina,
             next_full_regen: p.nextFullRegen ?? currentState.profile.nextFullRegen,
-            is_elite: p.isElite ?? currentState.profile.isElite // [PATCH]: Save VIP status to database
+            is_elite: p.isElite ?? currentState.profile.isElite
         };
         const { data, error } = await supabase
             .from('players')
@@ -198,35 +204,10 @@ const syncInventory = async () => {
 };
 
 // --- 3. UTILITIES ---
-export const calculateSupremacyScore = () => {
-    const state = getState();
-    const profile = state.profile || {};
-    const shipClass = profile.shipClass || 'INTERCEPTOR';
-    const baseShip = SHIPS[shipClass] || { atk: 10, crit: 5, hp: 100, def: 5, speed: 50 };
-
-    let tHp = baseShip.hp, tAtk = baseShip.atk, tDef = baseShip.def, tSpd = baseShip.speed, tCrit = baseShip.crit;
-
-    if (state.equipped) {
-        Object.values(state.equipped).forEach(i => {
-            if (i && i.stats) {
-                tHp += (i.stats.hp || 0); tAtk += (i.stats.atk || 0); tDef += (i.stats.def || 0);
-                tSpd += (i.stats.speed || 0); tCrit += (i.stats.crit || 0);
-            }
-        });
-    }
-
-    const combat = Math.floor((tHp / 10) + (tAtk * 5) + (tDef * 5) + (tSpd * 3) + (tCrit * 15));
-    const wealth = Math.floor((profile.gold || 0) / 1000) + ((profile.iron_ore || 0) * 2) + ((profile.dark_energy || 0) * 10);
-    const progress = (profile.level || 1) * 100 + Math.floor((profile.xp || 0) / 10);
-
-    return { totalScore: combat + wealth + progress, details: { combat, wealth, progress } };
-};
-
 export const getTopPlayers = async () => {
     try {
         const { data, error } = await supabase
             .from('players')
-            // [PATCH]: Add is_elite to query parameter (.select) for Leaderboard access
             .select('username, level, gold, ship_class, is_elite')
             .order('level', { ascending: false })
             .order('gold', { ascending: false })
@@ -240,25 +221,23 @@ export const getTopPlayers = async () => {
     }
 };
 
-export const checkAndRecoverWallet = async (solanaAddress) => {
-    if (!supabase) return false;
+export const checkAndRecoverWallet = async (tonAddress) => {
+    if (!supabase || !tonAddress) return false;
     try {
         const { data, error } = await supabase
             .from('players')
             .select('wallet_address, username')
-            .eq('solana_wallet', solanaAddress)
-            .not('username', 'is', null) 
-            .neq('username', 'ANONYMOUS')
-            .order('level', { ascending: false })
-            .limit(1);
+            .eq('ton_wallet', tonAddress)
+            .single();
 
-        if (data && data.length > 0 && data[0].wallet_address) {
-            localStorage.setItem('EMERALD_DEVICE_ID_V5', data[0].wallet_address);
-            return true;
+        if (data && data.wallet_address) {
+            if (localStorage.getItem('EMERALD_DEVICE_ID_V5') !== data.wallet_address) {
+                localStorage.setItem('EMERALD_DEVICE_ID_V5', data.wallet_address);
+                return true;
+            }
         }
         return false;
     } catch (e) {
-        console.error("Recovery Error:", e);
         return false;
     }
 };
@@ -268,4 +247,65 @@ export const resetState = () => {
     localStorage.removeItem('EMERALD_SPACE_SAVE_V5');
     localStorage.removeItem('EMERALD_DEVICE_ID_V5');
     window.location.reload();
+};
+
+// ==========================================
+// 4. REFERRAL SYSTEM LOGIC (DIRECT DB UPDATE)
+// ==========================================
+export const setReferrer = async (newPlayerWallet, inviterTelegramId) => {
+    try {
+        if (!supabase) return false;
+
+        // 1. Cek apakah pemain baru ini (newPlayer) sudah punya catatan di Supabase
+        const { data: newPlayer, error: fetchErr } = await supabase
+            .from('players') // Pastikan nama tabelnya 'players' (sesuai kode loadStateFromServer di atas)
+            .select('referred_by')
+            .eq('ton_wallet', newPlayerWallet) // Cek berdasarkan ton_wallet
+            .single();
+
+        if (fetchErr && fetchErr.code !== 'PGRST116') {
+            console.error("[REFERRAL] Check error:", fetchErr);
+            return false;
+        }
+
+        // 2. Jika pemain baru belum punya 'referred_by'
+        if (!newPlayer || !newPlayer.referred_by) {
+            
+            console.log(`[REFERRAL] Memproses referral. Inviter ID: ${inviterTelegramId}`);
+
+            // 3. Simpan ID Pengundang ke profil pemain baru
+            await supabase
+                .from('players')
+                .update({ referred_by: inviterTelegramId })
+                .eq('ton_wallet', newPlayerWallet); // Hubungkan via ton_wallet
+
+            // 4. Cari profil si Pengundang (Inviter) berdasarkan telegram_id mereka
+            const { data: inviterData, error: inviterErr } = await supabase
+                .from('players')
+                .select('wallet_address, gold')
+                .eq('telegram_id', inviterTelegramId.toString()) // Pastikan dicari sebagai String
+                .single();
+
+            // 5. Jika Pengundang ditemukan, beri mereka 5,000 GOLD!
+            if (inviterData && !inviterErr) {
+                const updatedGold = (inviterData.gold || 0) + 5000;
+                
+                await supabase
+                    .from('players')
+                    .update({ gold: updatedGold })
+                    .eq('wallet_address', inviterData.wallet_address);
+                    
+                console.log(`[REFERRAL SUCCESS] 5,000 Gold dikirim ke Inviter: ${inviterTelegramId}`);
+                return true;
+            } else {
+                 console.log(`[REFERRAL FAILED] Pengundang dengan ID ${inviterTelegramId} tidak ditemukan di database.`);
+            }
+        } else {
+            console.log("[REFERRAL] Pemain ini sudah direkrut sebelumnya.");
+            return false;
+        }
+    } catch (err) {
+        console.error("Critical Referral Error:", err);
+        return false;
+    }
 };
