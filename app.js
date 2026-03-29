@@ -32,7 +32,7 @@ window.copyAddress = (targetId) => {
     const toast = document.createElement('div');
     toast.id = 'sys-toast';
     toast.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#0098EA; color:#fff; padding:10px 20px; border-radius:6px; font-weight:900; font-size:12px; z-index:99999; box-shadow:0 0 15px #0098EA; transition: opacity 0.5s ease-in-out; text-transform:uppercase; letter-spacing:1px;';
-    toast.innerHTML = 'ðŸ“‹ COPIED!';
+    toast.innerHTML = '📋‹ COPIED!';
     document.body.appendChild(toast);
     
     setTimeout(() => toast.style.opacity = '0', 2000);
@@ -121,7 +121,7 @@ const checkDailyReward = () => {
     overlay.style.zIndex = "99999";
     overlay.innerHTML = `
         <div class="modal-box" style="border-color: #3498db; box-shadow: 0 0 30px rgba(52, 152, 219, 0.4); background: #0d1117; text-align:center;">
-            <h3 style="color:#3498db; margin-bottom:5px; font-size:18px; letter-spacing:1px; text-shadow: 0 0 10px #3498db;">ðŸ“¦ DAILY SUPPLY DROP</h3>
+            <h3 style="color:#3498db; margin-bottom:5px; font-size:18px; letter-spacing:1px; text-shadow: 0 0 10px #3498db;">📦 ¦ DAILY SUPPLY DROP</h3>
             <div style="color:#8b949e; font-size:12px; margin-bottom:15px; font-weight:bold;">LOGIN STREAK: DAY ${streak}/7</div>
             
             <img src="source/icon/loot.png" style="width:70px; height:70px; margin-bottom:15px; filter:drop-shadow(0 0 15px #3498db); animation: float 3s ease-in-out infinite;">
@@ -373,7 +373,7 @@ const initAbout = async () => {
         const refBtn = document.createElement('button');
         refBtn.id = 'btn-referral-system';
         refBtn.style.cssText = "width: 100%; padding: 12px; background: rgba(46, 204, 113, 0.1); border: 1px dashed var(--emerald); color: var(--emerald); font-weight: 900; border-radius: 4px; cursor: pointer; transition: 0.2s; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 10px rgba(46, 204, 113, 0.2);";
-        refBtn.innerHTML = "ðŸ¤ RECRUIT CREW (GET 5,000 GOLD)";
+        refBtn.innerHTML = "🤝 RECRUIT CREW (GET 5,000 GOLD)";
 
         const tokenomicsBtn = document.getElementById('btn-show-tokenomics');
         if(tokenomicsBtn) {
@@ -450,7 +450,7 @@ const initAbout = async () => {
                     <div style="background: linear-gradient(180deg, #161b22, #0d1117); border: 1px solid var(--gold); padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; box-shadow: 0 0 20px rgba(255, 202, 40, 0.15); position: relative; overflow: hidden;">
                         <div style="position:absolute; top:-50px; left:50%; transform:translateX(-50%); width:150px; height:100px; background:var(--gold); filter:blur(60px); opacity:0.2; pointer-events:none;"></div>
                         
-                        <h3 style="color: var(--gold); font-size: 14px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 5px var(--gold);">ðŸ† GLOBAL PRIZE POOL</h3>
+                        <h3 style="color: var(--gold); font-size: 14px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 5px var(--gold);">🏆 GLOBAL PRIZE POOL</h3>
                         <p style="color: #8b949e; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">Awaiting Seasonal Distribution</p>
                         
                         <div id="live-prize-pool-ton" style="color: #0098EA; font-size: 26px; font-weight: 900; text-shadow: 0 0 15px rgba(0, 152, 234, 0.6); margin-bottom: 2px; letter-spacing: 1px;">CALCULATING...</div>
@@ -473,7 +473,7 @@ const initAbout = async () => {
                     </div>
                     
                     <h3 style="color: var(--gold); font-size: 14px; margin-bottom: 12px; border-bottom: 1px solid #30363d; padding-bottom: 5px; text-transform: uppercase; display: flex; align-items: center; gap: 8px;">
-                        ðŸ’Ž Strategic Token Distribution
+                        💎 Strategic Token Distribution
                     </h3>
                     <p style="color: #8b949e; font-size: 11px; line-height: 1.6; margin-bottom: 12px; text-align: justify;">
                         Total Supply: <strong style="color:#e6edf3;">1,000,000,000 $EMRLD</strong>. Our economy is designed for sustainable growth, rewarding active pilots and early adopters in the TON ecosystem.
@@ -507,7 +507,7 @@ const initAbout = async () => {
                     </div>
 
                     <h3 style="color: var(--emerald); font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #30363d; padding-bottom: 5px; text-transform: uppercase;">
-                        âš™ï¸ The Deflationary Engine
+                        ⚙️ The Deflationary Engine
                     </h3>
                     <p style="color: #8b949e; font-size: 11px; line-height: 1.6; margin-bottom: 12px; text-align: justify;">
                         Our economy relies on an aggressive, self-sustaining flywheel. Every time a pilot spends TON in-game, the system automatically triggers a market intervention:
@@ -531,7 +531,7 @@ const initAbout = async () => {
                     </div>
 
                     <h3 style="color: #3498db; font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #30363d; padding-bottom: 5px; text-transform: uppercase;">
-                        ðŸ”‘ Telegram & Token Utility
+                        🔑 Telegram & Token Utility
                     </h3>
                     <ul style="color: #8b949e; font-size: 11px; line-height: 1.6; padding-left: 20px; margin-bottom: 25px;">
                         <li style="margin-bottom: 6px;"><strong style="color:#e6edf3;">Elite Clearance:</strong> Holding $EMRLD is the only way to unlock VIP Map Sectors, secure Whitelist allocations, and access high-tier resource drops.</li>
@@ -582,7 +582,7 @@ const initAbout = async () => {
                         <div style="position:absolute; top:-50px; left:50%; transform:translateX(-50%); width:100px; height:100px; background:var(--gold); filter:blur(50px); opacity:0.3; pointer-events:none;"></div>
                         
                         <img src="source/icon/warning.png" class="modal-icon" style="filter: drop-shadow(0 0 10px var(--gold));">
-                        <h3 class="modal-title" style="color:var(--gold); text-shadow: 0 0 10px var(--gold); font-size: 20px; letter-spacing: 2px;">ðŸŽ« ELITE LICENSE</h3>
+                        <h3 class="modal-title" style="color:var(--gold); text-shadow: 0 0 10px var(--gold); font-size: 20px; letter-spacing: 2px;"> 🎫 ELITE LICENSE</h3>
                         
                         <p class="modal-text" style="color: #e6edf3; font-size: 13px; line-height: 1.6; margin-bottom: 15px;">
                             Upgrade your pilot clearance to <strong style="color:var(--gold)">ELITE TIER</strong>.<br>
@@ -842,7 +842,7 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
     toast.id = 'global-toast';
     toast.style.cssText = `position:fixed; top:65px; left:50%; transform:translateX(-50%); background:rgba(13,17,23,0.9); border:1px solid #30363d; color:#e6edf3; padding:8px 15px; border-radius:20px; font-size:10px; z-index:99998; box-shadow:0 5px 15px rgba(0,0,0,0.5); backdrop-filter:blur(5px); white-space:nowrap; transition:all 0.5s ease; opacity:0; pointer-events:none;`;
     
-    toast.innerHTML = `ðŸ“¡ <b>GLOBAL:</b> Pilot <b style="color:var(--emerald);">${playerName}</b> ${actionText}`;
+    toast.innerHTML = 📡 <b>GLOBAL:</b> Pilot <b style="color:var(--emerald);">${playerName}</b> ${actionText}`;
     document.body.appendChild(toast);
     
     setTimeout(() => { toast.style.opacity = '1'; toast.style.top = '75px'; }, 100);
