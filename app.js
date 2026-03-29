@@ -1,8 +1,8 @@
 /* =========================================
-   CORE APP - EMERALD SPACE (MAINNET + PRIVY READY)
+   CORE APP - EMERALD SPACE (TON NETWORK READY)
    ========================================= */
 
-import { getState, updateState, loadStateFromServer, getTopPlayers, checkAndRecoverWallet } from './js/logic/state.js';
+import { getState, updateState, loadStateFromServer, getTopPlayers, checkAndRecoverWallet, setReferrer } from './js/logic/state.js';
 import { SHIPS } from './js/data/ships.js';
 import { initHangar } from './js/ui/hangarUI.js';
 import { initMap } from './js/ui/mapUI.js';
@@ -11,9 +11,7 @@ import { initShop } from './js/ui/shopUI.js';
 import { updateTopBar as battleUpdateTopBar } from './js/ui/battleUI.js';
 import { playSFX, playBGM, toggleBGM, toggleSFX } from './js/logic/audio.js';
 import { initStarfield } from './js/ui/starfield.js'; 
-
-// [UPDATE] Import logika dompet pintar dari crypto.js
-import { connectWallet, disconnectWallet } from './js/logic/crypto.js'; 
+import { tonConnectUI } from './js/logic/crypto.js'; 
 
 let connectedWalletAddress = null;
 
@@ -33,8 +31,8 @@ window.copyAddress = (targetId) => {
     const exist = document.getElementById('sys-toast'); if(exist) exist.remove();
     const toast = document.createElement('div');
     toast.id = 'sys-toast';
-    toast.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--emerald); color:#000; padding:10px 20px; border-radius:6px; font-weight:900; font-size:12px; z-index:99999; box-shadow:0 0 15px var(--emerald); transition: opacity 0.5s ease-in-out; text-transform:uppercase; letter-spacing:1px;';
-    toast.innerHTML = '📋 COPIED!';
+    toast.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#0098EA; color:#fff; padding:10px 20px; border-radius:6px; font-weight:900; font-size:12px; z-index:99999; box-shadow:0 0 15px #0098EA; transition: opacity 0.5s ease-in-out; text-transform:uppercase; letter-spacing:1px;';
+    toast.innerHTML = 'ðŸ“‹ COPIED!';
     document.body.appendChild(toast);
     
     setTimeout(() => toast.style.opacity = '0', 2000);
@@ -123,7 +121,7 @@ const checkDailyReward = () => {
     overlay.style.zIndex = "99999";
     overlay.innerHTML = `
         <div class="modal-box" style="border-color: #3498db; box-shadow: 0 0 30px rgba(52, 152, 219, 0.4); background: #0d1117; text-align:center;">
-            <h3 style="color:#3498db; margin-bottom:5px; font-size:18px; letter-spacing:1px; text-shadow: 0 0 10px #3498db;">📦 DAILY SUPPLY DROP</h3>
+            <h3 style="color:#3498db; margin-bottom:5px; font-size:18px; letter-spacing:1px; text-shadow: 0 0 10px #3498db;">ðŸ“¦ DAILY SUPPLY DROP</h3>
             <div style="color:#8b949e; font-size:12px; margin-bottom:15px; font-weight:bold;">LOGIN STREAK: DAY ${streak}/7</div>
             
             <img src="source/icon/loot.png" style="width:70px; height:70px; margin-bottom:15px; filter:drop-shadow(0 0 15px #3498db); animation: float 3s ease-in-out infinite;">
@@ -169,15 +167,6 @@ const checkAccountSetup = () => {
 
         switchScreen('setup');
         
-        // [AUTO-FILL USERNAME DARI TELEGRAM JIKA ADA]
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-            const tgName = window.Telegram.WebApp.initDataUnsafe.user.username || window.Telegram.WebApp.initDataUnsafe.user.first_name;
-            if (tgName) {
-                const nameInput = document.getElementById('input-username');
-                if (nameInput) nameInput.value = tgName.substring(0, 12).toUpperCase();
-            }
-        }
-
         let selectedShip = 'INTERCEPTOR';
         const shipBtns = document.querySelectorAll('.btn-ship-select');
         const shipImgEl = document.getElementById('setup-ship-img');
@@ -231,7 +220,8 @@ const checkAccountSetup = () => {
                 const usernameInput = inputEl ? inputEl.value.trim().toUpperCase() : '';
 
                 if (!usernameInput || usernameInput === 'ANONYMOUS') { window.showSimplePopup("INVALID IDENTITY", "Please enter a valid Pilot Name!", "#ff4444"); return; }
-                if (!connectedWalletAddress) { window.showSimplePopup("ACCESS DENIED", "Please connect your Solana Wallet to play.", "#ff4444"); return; }
+                
+                if (!connectedWalletAddress) { window.showSimplePopup("ACCESS DENIED", "Please connect your TON Wallet to play.", "#ff4444"); return; }
 
                 updateState({ 
                     profile: { 
@@ -264,7 +254,7 @@ const checkAccountSetup = () => {
 };
 
 // ==========================================
-// SOLANA MULTI-WALLET LISTENER
+// TON CONNECT LISTENER
 // ==========================================
 const btnOpenPopup = document.getElementById('btn-open-wallet-popup');
 const walletOverlay = document.getElementById('wallet-select-overlay');
@@ -276,55 +266,72 @@ if (btnOpenPopup) btnOpenPopup.onclick = () => { playSFX('click'); walletOverlay
 if (btnCancel) btnCancel.onclick = () => { playSFX('click'); walletOverlay.style.display = 'none'; };
 if (walletOverlay) walletOverlay.onclick = (event) => { if (event.target === walletOverlay) walletOverlay.style.display = 'none'; };
 
-// [UPDATE]: Menangkap semua klik tombol dompet (Privy, Phantom, Solflare)
-document.querySelectorAll('.btn-connect-option').forEach(btn => {
-    btn.onclick = async () => {
-        const walletType = btn.getAttribute('data-wallet'); 
+tonConnectUI.onStatusChange(async (wallet) => {
+    if (wallet) {
+        connectedWalletAddress = wallet.account.address;
+        if(walletOverlay) walletOverlay.style.display = 'none';
         
-        // Panggil fungsi dari crypto.js
-        const address = await connectWallet(walletType);
-        
-        if (address) {
-            connectedWalletAddress = address;
-            if(walletOverlay) walletOverlay.style.display = 'none';
-            
-            const isRecovered = await checkAndRecoverWallet(connectedWalletAddress);
-            if (isRecovered) {
-                const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
-                window.showSimplePopup("ACCOUNT RECOVERED", "Old save data found! Restoring your fleet...", "var(--emerald)");
-                setTimeout(() => window.location.reload(), 2000);
-                return; 
-            }
-            
-            const state = getState();
-            updateState({ profile: { ...state.profile, walletAddress: connectedWalletAddress } });
-
-            if (btnOpenPopup) btnOpenPopup.style.display = 'none';
-            if (walletStatusDiv) walletStatusDiv.style.display = 'block';
-            
-            if (walletAddressDisplay) {
-                const shortAddress = connectedWalletAddress.slice(0, 4) + '...' + connectedWalletAddress.slice(-4);
-                walletAddressDisplay.innerText = shortAddress;
-            }
-
-            let providerName = walletType.toUpperCase();
-            if (walletType === 'privy') providerName = "BAGSAPP / PRIVY";
-
+        const isRecovered = await checkAndRecoverWallet(connectedWalletAddress);
+        if (isRecovered) {
             const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
-            window.showSimplePopup("SIGNAL SECURED", `Mainframe synced to Solana Network via ${providerName}:<br><strong style="color:var(--emerald);">${connectedWalletAddress.slice(0,4)}...${connectedWalletAddress.slice(-4)}</strong>`, "var(--emerald)");
+            window.showSimplePopup("ACCOUNT RECOVERED", "Old save data found! Restoring your fleet...", "#0098EA");
+            setTimeout(() => window.location.reload(), 2000);
+            return; 
         }
-    };
+
+        let inviterWallet = null;
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
+            const startParam = window.Telegram.WebApp.initDataUnsafe.start_param;
+            if (startParam && startParam !== connectedWalletAddress) {
+                inviterWallet = startParam;
+            }
+        }
+
+        if (inviterWallet) {
+            await setReferrer(connectedWalletAddress, inviterWallet);
+        }
+        
+        // PENANGKAP TELEGRAM ID
+        let myTelegramId = null;
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+            myTelegramId = window.Telegram.WebApp.initDataUnsafe.user.id.toString();
+        }
+
+        const state = getState();
+        updateState({ 
+            profile: { 
+                ...state.profile, 
+                walletAddress: connectedWalletAddress,
+                telegram_id: myTelegramId 
+            } 
+        });
+
+        if (btnOpenPopup) btnOpenPopup.style.display = 'none';
+        if (walletStatusDiv) {
+            walletStatusDiv.style.display = 'block';
+            walletStatusDiv.style.borderColor = '#0098EA';
+            walletStatusDiv.style.background = 'rgba(0, 152, 234, 0.1)';
+            walletStatusDiv.querySelector('p').style.color = '#0098EA';
+        }
+
+        const shortAddress = connectedWalletAddress.slice(0, 4) + '...' + connectedWalletAddress.slice(-4);
+        
+        if (walletAddressDisplay) {
+            walletAddressDisplay.innerText = shortAddress;
+        }
+
+        const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
+        window.showSimplePopup("SIGNAL SECURED", `Mainframe synced to TON Wallet:<br><strong style="color:#0098EA; word-break:break-all;">${shortAddress}</strong>`, "#0098EA");
+        
+    } else {
+        connectedWalletAddress = null;
+    }
 });
 
 
 const initGame = async () => {
     try {
         initStarfield();
-
-        // Expands Telegram Web App to full screen automatically
-        if (window.Telegram && window.Telegram.WebApp) {
-            window.Telegram.WebApp.expand();
-        }
 
         let deviceWallet = localStorage.getItem('EMERALD_DEVICE_ID_V5');
         if (!deviceWallet) {
@@ -336,7 +343,7 @@ const initGame = async () => {
         const loadingDiv = document.createElement('div');
         loadingDiv.id = 'screen-loading';
         loadingDiv.className = 'screen';
-        loadingDiv.innerHTML = `<h2 style="color:var(--emerald); text-align:center; margin-top:50vh; transform:translateY(-50%); animation: pulse 1.5s infinite;">ESTABLISHING CONNECTION...</h2>`;
+        loadingDiv.innerHTML = `<h2 style="color:#0098EA; text-align:center; margin-top:50vh; transform:translateY(-50%); animation: pulse 1.5s infinite;">ESTABLISHING CONNECTION...</h2>`;
         appContent.appendChild(loadingDiv);
         switchScreen('loading');
 
@@ -357,9 +364,70 @@ const initGame = async () => {
 };
 
 // ==========================================
-// MENU ABOUT / INFO - (DOSSIER & ELITE LICENSE)
+// MENU ABOUT / INFO 
 // ==========================================
 const initAbout = async () => {
+
+    const aboutContainer = document.querySelector('#screen-about > div');
+    if (aboutContainer && !document.getElementById('btn-referral-system')) {
+        const refBtn = document.createElement('button');
+        refBtn.id = 'btn-referral-system';
+        refBtn.style.cssText = "width: 100%; padding: 12px; background: rgba(46, 204, 113, 0.1); border: 1px dashed var(--emerald); color: var(--emerald); font-weight: 900; border-radius: 4px; cursor: pointer; transition: 0.2s; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 10px rgba(46, 204, 113, 0.2);";
+        refBtn.innerHTML = "ðŸ¤ RECRUIT CREW (GET 5,000 GOLD)";
+
+        const tokenomicsBtn = document.getElementById('btn-show-tokenomics');
+        if(tokenomicsBtn) {
+            aboutContainer.insertBefore(refBtn, tokenomicsBtn);
+        }
+
+        refBtn.onclick = () => {
+            if(typeof playSFX === 'function') playSFX('click');
+            const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
+
+            let playerId = "UNKNOWN";
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+                playerId = window.Telegram.WebApp.initDataUnsafe.user.id;
+            } else {
+                const state = getState();
+                playerId = state.profile.walletAddress || "PLEASE_CONNECT_WALLET_FIRST";
+            }
+
+            const botUsername = "EmeraldSpace_bot"; 
+            const refLink = `https://t.me/${botUsername}/play?startapp=${playerId}`;
+
+            const overlay = document.createElement('div');
+            overlay.id = 'scifi-popup';
+            overlay.className = 'modal-overlay z-alert';
+            overlay.innerHTML = `
+                <div class="modal-box" style="border-color: var(--emerald); box-shadow: 0 0 30px rgba(46, 204, 113, 0.3); background: #0d1117; width: 90%; max-width: 350px;">
+                    <h3 class="modal-title" style="color:var(--emerald); text-shadow: 0 0 10px rgba(46,204,113,0.5);"><img src="source/icon/about.png" style="width:20px; vertical-align:-3px; filter: drop-shadow(0 0 5px var(--emerald));"> FLEET RECRUITMENT</h3>
+                    
+                    <p style="color:#e6edf3; font-size:12px; line-height:1.5; margin-bottom:15px;">
+                        Recruit new pilots to the Emerald Space fleet and earn <strong style="color:var(--gold);">5,000 GOLD</strong> for every successful registration & reach lev.6!
+                    </p>
+                    
+                    <div style="background:#161b22; border:1px solid #30363d; padding:12px; border-radius:6px; margin-bottom:15px; word-break:break-all;">
+                        <span style="font-size: 10px; color: #8b949e; letter-spacing: 1px; display:block; margin-bottom:5px;">YOUR SHORT LINK:</span>
+                        <span id="ref-link-text" style="color:#00eaff; font-size:12px; font-weight:bold;">${refLink}</span>
+                    </div>
+                    
+                    <div style="display:flex; gap:10px;">
+                        <button id="btn-close-ref" style="flex:1; background:transparent; border:1px solid #ff4444; color:#ff4444; padding:12px; border-radius:4px; font-weight:bold; cursor:pointer;">CLOSE</button>
+                        <button id="btn-copy-ref" style="flex:2; background:var(--emerald); border:none; color:#000; padding:12px; border-radius:4px; font-weight:900; box-shadow: 0 0 15px rgba(46, 204, 113, 0.4); cursor:pointer;">COPY LINK</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            document.getElementById('btn-close-ref').onclick = () => overlay.remove();
+            document.getElementById('btn-copy-ref').onclick = () => {
+                if(typeof playSFX === 'function') playSFX('click');
+                navigator.clipboard.writeText(refLink);
+                window.showSimplePopup("LINK COPIED!", "Share this link with your friends to expand your fleet.", "var(--emerald)");
+                overlay.remove();
+            };
+        };
+    }
 
     const btnTokenomics = document.getElementById('btn-show-tokenomics');
     if (btnTokenomics) {
@@ -370,55 +438,85 @@ const initAbout = async () => {
             const overlay = document.createElement('div');
             overlay.id = 'scifi-popup';
             overlay.className = 'modal-overlay z-menu';
+            
             overlay.innerHTML = `
-                <div class="modal-box" style="border-color: #00eaff; box-shadow: 0 0 30px rgba(0, 234, 255, 0.2); background: #0d1117; width: 90%; max-width: 480px; max-height: 85vh; overflow-y: auto; text-align: left; padding: 25px;">
+                <div class="modal-box" style="border-color: #0098EA; box-shadow: 0 0 30px rgba(0, 152, 234, 0.2); background: #0d1117; width: 90%; max-width: 480px; max-height: 85vh; overflow-y: auto; text-align: left; padding: 25px;">
                     
-                    <h2 style="color: #00eaff; text-align: center; margin-bottom: 15px; letter-spacing: 2px; font-size: 18px; text-shadow: 0 0 10px #00eaff;">
-                        <img src="source/icon/about.png" style="width:24px; vertical-align:-5px; filter: drop-shadow(0 0 5px #00eaff); margin-right: 5px;"> 
-                        PROJECT DOSSIER
+                    <h2 style="color: #0098EA; text-align: center; margin-bottom: 15px; letter-spacing: 2px; font-size: 18px; text-shadow: 0 0 10px #0098EA;">
+                        <img src="source/icon/about.png" style="width:24px; vertical-align:-5px; filter: drop-shadow(0 0 5px #0098EA); margin-right: 5px;"> 
+                        OFFICIAL WHITEPAPER
                     </h2>
+
+                    <div style="background: linear-gradient(180deg, #161b22, #0d1117); border: 1px solid var(--gold); padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; box-shadow: 0 0 20px rgba(255, 202, 40, 0.15); position: relative; overflow: hidden;">
+                        <div style="position:absolute; top:-50px; left:50%; transform:translateX(-50%); width:150px; height:100px; background:var(--gold); filter:blur(60px); opacity:0.2; pointer-events:none;"></div>
+                        
+                        <h3 style="color: var(--gold); font-size: 14px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 5px var(--gold);">ðŸ† GLOBAL PRIZE POOL</h3>
+                        <p style="color: #8b949e; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">Awaiting Seasonal Distribution</p>
+                        
+                        <div id="live-prize-pool-ton" style="color: #0098EA; font-size: 26px; font-weight: 900; text-shadow: 0 0 15px rgba(0, 152, 234, 0.6); margin-bottom: 2px; letter-spacing: 1px;">CALCULATING...</div>
+                        <div style="color: #8b949e; font-size: 10px; font-weight: bold; margin-bottom: 10px;">Distribution: <span style="color:var(--gold);">Elite 80%</span> | <span style="color:#e6edf3;">Reg 20%</span></div>
+                        
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 5px;">
+                            <span style="color:#8b949e; font-size:16px;">+</span>
+                            <div style="display:flex; flex-direction:column; align-items:center;">
+                                <div style="color: var(--emerald); font-size: 22px; font-weight: 900; text-shadow: 0 0 15px rgba(46, 204, 113, 0.6); animation: pulse 2s infinite;">100,000,000 $EMRLD</div>
+                                <div style="color: #8b949e; font-size: 10px; font-weight: bold; margin-top: 2px;">Distribution: <span style="color:var(--gold);">Elite 60%</span> | <span style="color:#e6edf3;">Reg 40%</span></div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <div style="background: rgba(46, 204, 113, 0.05); border-left: 3px solid var(--emerald); padding: 12px; margin-bottom: 20px; border-radius: 0 6px 6px 0;">
-                        <strong style="color: var(--emerald); font-size: 13px; display: block; margin-bottom: 4px; text-transform: uppercase;">The Paradigm Shift</strong>
+                        <strong style="color: var(--emerald); font-size: 13px; display: block; margin-bottom: 4px; text-transform: uppercase;">The TMA Paradigm Shift</strong>
                         <p style="color: #c9d1d9; font-size: 11px; line-height: 1.6; margin: 0; text-align: justify;">
-                            Emerald Space is pioneering the next generation of Web3 gaming natively on <strong>BagsApp</strong>. Powered by the blazing-fast <strong>Solana Network</strong>, we are merging hyper-deflationary tokenomics with a sustainable organic treasury to guarantee that the value created by the players, stays with the players.
+                            Emerald Space is pioneering the next generation of <strong>Telegram Mini-Apps (TMA)</strong> powered directly by the TON Network. We are dismantling the predatory "Play-to-Earn" model. By merging hyper-deflationary tokenomics with a sustainable organic treasury, we guarantee that the value created by the players, stays with the playersâ€”safely in your Telegram Wallet.
                         </p>
                     </div>
                     
                     <h3 style="color: var(--gold); font-size: 14px; margin-bottom: 12px; border-bottom: 1px solid #30363d; padding-bottom: 5px; text-transform: uppercase; display: flex; align-items: center; gap: 8px;">
-                        💎 $EMRLD Tokenomics
+                        ðŸ’Ž Strategic Token Distribution
                     </h3>
+                    <p style="color: #8b949e; font-size: 11px; line-height: 1.6; margin-bottom: 12px; text-align: justify;">
+                        Total Supply: <strong style="color:#e6edf3;">1,000,000,000 $EMRLD</strong>. Our economy is designed for sustainable growth, rewarding active pilots and early adopters in the TON ecosystem.
+                    </p>
                     
                     <div style="background: #161b22; border: 1px solid #30363d; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px; border-bottom: 1px dashed #30363d; padding-bottom: 6px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">Launch Model</span>
-                            <strong style="color:#e6edf3; font-size:11px; text-align: right; line-height: 1.4;">100% Fairlaunch on Solana</strong>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
+                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">ðŸŽ® Play-to-Airdrop (35%)</span>
+                            <strong style="color:#2ecc71; font-size:11px; text-align: right; line-height: 1.4;">350,000,000</strong>
                         </div>
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px; border-bottom: 1px dashed #30363d; padding-bottom: 6px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">Ecosystem Focus</span>
-                            <strong style="color:#00eaff; font-size:11px; text-align: right; line-height: 1.4;">Telegram Mini-Apps & BagsApp</strong>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
+                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">ðŸ’§ Liquidity & MM (20%)</span>
+                            <strong style="color:#0098EA; font-size:11px; text-align: right; line-height: 1.4;">200,000,000</strong>
                         </div>
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px; border-bottom: 1px dashed #30363d; padding-bottom: 6px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">Total Supply</span>
-                            <strong style="color:#e6edf3; font-size:11px; letter-spacing: 1px; text-align: right; line-height: 1.4;">1,000,000,000 $EMRLD</strong>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
+                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">ðŸš€ Ecosystem & Marketing (15%)</span>
+                            <strong style="color:#e6edf3; font-size:11px; text-align: right; line-height: 1.4;">150,000,000</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
+                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">ðŸ› ï¸ Core Team (15%)</span>
+                            <strong style="color:#ff4444; font-size:11px; text-align: right; line-height: 1.4;">150,000,000 <span style="font-size:9px; font-weight:normal; color:#8b949e; display:block;">(24-Month Vesting)</span></strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
+                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">ðŸŽ–ï¸ Early Adopters (10%)</span>
+                            <strong style="color:var(--gold); font-size:11px; text-align: right; line-height: 1.4;">100,000,000 <span style="font-size:9px; font-weight:normal; color:#8b949e; display:block;">(Elite & Beta Players)</span></strong>
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">Initial Liquidity</span>
-                            <strong style="color:#ff4444; font-size:11px; text-align: right; line-height: 1.4;">Locked & Burned Forever 🔥</strong>
+                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">ðŸ¤ Advisors & Partners (5%)</span>
+                            <strong style="color:#e6edf3; font-size:11px; text-align: right; line-height: 1.4;">50,000,000</strong>
                         </div>
                     </div>
 
                     <h3 style="color: var(--emerald); font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #30363d; padding-bottom: 5px; text-transform: uppercase;">
-                        ⚙️ The "Zero-to-Hero" Engine
+                        âš™ï¸ The Deflationary Engine
                     </h3>
                     <p style="color: #8b949e; font-size: 11px; line-height: 1.6; margin-bottom: 12px; text-align: justify;">
-                        Our economy relies on an aggressive, self-sustaining flywheel. Every time a pilot spends SOL in-game, the system automatically triggers a market intervention:
+                        Our economy relies on an aggressive, self-sustaining flywheel. Every time a pilot spends TON in-game, the system automatically triggers a market intervention:
                     </p>
                     
                     <div style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
-                        <div style="background: rgba(0, 234, 255, 0.05); padding: 10px; border-radius: 6px; border-left: 2px solid #00eaff;">
-                            <strong style="color:#00eaff; font-size:12px; display:block; margin-bottom:2px;">1. Auto-Buyback (60%)</strong>
-                            <span style="color:#e6edf3; font-size:10px; line-height:1.4;">60% of all in-game SOL revenue is injected straight into the liquidity pool to buy back $EMRLD from the open market, creating constant buying pressure.</span>
+                        <div style="background: rgba(0, 152, 234, 0.05); padding: 10px; border-radius: 6px; border-left: 2px solid #0098EA;">
+                            <strong style="color:#0098EA; font-size:12px; display:block; margin-bottom:2px;">1. Auto-Buyback (60%)</strong>
+                            <span style="color:#e6edf3; font-size:10px; line-height:1.4;">60% of all in-game TON revenue is injected straight into the liquidity pool to buy back $EMRLD from the open market, creating constant buying pressure.</span>
                         </div>
                         
                         <div style="background: rgba(255, 68, 68, 0.05); padding: 10px; border-radius: 6px; border-left: 2px solid #ff4444;">
@@ -433,14 +531,15 @@ const initAbout = async () => {
                     </div>
 
                     <h3 style="color: #3498db; font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #30363d; padding-bottom: 5px; text-transform: uppercase;">
-                        🔑 Token Utility
+                        ðŸ”‘ Telegram & Token Utility
                     </h3>
                     <ul style="color: #8b949e; font-size: 11px; line-height: 1.6; padding-left: 20px; margin-bottom: 25px;">
-                        <li style="margin-bottom: 6px;"><strong style="color:#e6edf3;">VIP Clearance:</strong> Holding 1,000,000 $EMRLD in your Solana Wallet unlocks the VIP Map Sectors where the rarest item drops are hidden.</li>
-                        <li style="margin-bottom: 6px;"><strong style="color:#e6edf3;">The Cosmic Black Market:</strong> $EMRLD serves as the backbone currency for peer-to-peer trading of rare ship blueprints.</li>
+                        <li style="margin-bottom: 6px;"><strong style="color:#e6edf3;">Elite Clearance:</strong> Holding $EMRLD is the only way to unlock VIP Map Sectors, secure Whitelist allocations, and access high-tier resource drops.</li>
+                        <li style="margin-bottom: 6px;"><strong style="color:#e6edf3;">The Cosmic Black Market:</strong> $EMRLD serves as the backbone currency for peer-to-peer trading of rare ship blueprints and mythic armaments.</li>
+                        <li><strong style="color:#ffca28; text-shadow: 0 0 5px rgba(255,202,40,0.4);">Official TON NFT Arsenal (Phase 2):</strong> Elite Ships and Mythic Gear will soon be minted as true TON NFTs. $EMRLD will be the <strong>exclusive fuel</strong> required to forge, upgrade, and deploy these tournament-grade assets.</li>
                     </ul>
                     
-                    <button id="btn-close-tokenomics" style="width: 100%; padding: 14px; background: transparent; border: 1px solid #00eaff; color: #00eaff; font-weight: 900; border-radius: 6px; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; box-shadow: inset 0 0 10px rgba(0,234,255,0.1);">
+                    <button id="btn-close-tokenomics" style="width: 100%; padding: 14px; background: transparent; border: 1px solid #0098EA; color: #0098EA; font-weight: 900; border-radius: 6px; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; box-shadow: inset 0 0 10px rgba(0,152,234,0.1);">
                         ACKNOWLEDGE & CLOSE
                     </button>
                 </div>
@@ -448,8 +547,8 @@ const initAbout = async () => {
             document.body.appendChild(overlay);
             
             const closeBtn = document.getElementById('btn-close-tokenomics');
-            closeBtn.onmouseover = () => { closeBtn.style.background = '#00eaff'; closeBtn.style.color = '#000'; };
-            closeBtn.onmouseout = () => { closeBtn.style.background = 'transparent'; closeBtn.style.color = '#00eaff'; };
+            closeBtn.onmouseover = () => { closeBtn.style.background = '#0098EA'; closeBtn.style.color = '#fff'; };
+            closeBtn.onmouseout = () => { closeBtn.style.background = 'transparent'; closeBtn.style.color = '#0098EA'; };
             closeBtn.onclick = () => {
                 if(typeof playSFX === 'function') playSFX('click'); 
                 overlay.remove();
@@ -458,10 +557,8 @@ const initAbout = async () => {
     }
 
     const btnElite = document.getElementById('btn-upgrade-license'); 
-    
     if (btnElite) {
         const state = getState();
-        
         if (state.profile.isElite) {
             btnElite.innerHTML = '<img src="source/icon/sub/vip.png" style="width:16px; vertical-align:-2px; margin-right:6px;"> ELITE LICENSE ACQUIRED';
             btnElite.style.background = 'rgba(46, 204, 113, 0.1)';
@@ -469,13 +566,13 @@ const initAbout = async () => {
             btnElite.style.color = 'var(--emerald)';
             btnElite.style.boxShadow = '0 0 15px rgba(46, 204, 113, 0.3)';
             btnElite.style.cursor = 'default';
-            btnElite.disabled = true; 
+            btnElite.disabled = true;
         } else {
             btnElite.onclick = () => {
                 if(typeof playSFX === 'function') playSFX('click');
                 const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
                 
-                const upgradeCost = 25000000; 
+                const upgradeCost = 75000000; 
                 
                 const overlay = document.createElement('div'); 
                 overlay.id = 'scifi-popup'; 
@@ -485,11 +582,11 @@ const initAbout = async () => {
                         <div style="position:absolute; top:-50px; left:50%; transform:translateX(-50%); width:100px; height:100px; background:var(--gold); filter:blur(50px); opacity:0.3; pointer-events:none;"></div>
                         
                         <img src="source/icon/warning.png" class="modal-icon" style="filter: drop-shadow(0 0 10px var(--gold));">
-                        <h3 class="modal-title" style="color:var(--gold); text-shadow: 0 0 10px var(--gold); font-size: 20px; letter-spacing: 2px;">🎫 ELITE LICENSE</h3>
+                        <h3 class="modal-title" style="color:var(--gold); text-shadow: 0 0 10px var(--gold); font-size: 20px; letter-spacing: 2px;">ðŸŽ« ELITE LICENSE</h3>
                         
                         <p class="modal-text" style="color: #e6edf3; font-size: 13px; line-height: 1.6; margin-bottom: 15px;">
                             Upgrade your pilot clearance to <strong style="color:var(--gold)">ELITE TIER</strong>.<br>
-                            Standout in the Leaderboards.
+                            Unlock VIP sectors and exclusive features.
                         </p>
                         
                         <div style="margin: 15px 0; padding: 12px; background: rgba(0,0,0,0.6); border: 1px dashed var(--gold); border-radius: 8px;">
@@ -507,7 +604,6 @@ const initAbout = async () => {
                 document.getElementById('btn-pop-no').onclick = () => overlay.remove();
                 document.getElementById('btn-pop-yes').onclick = () => {
                     overlay.remove();
-                    
                     const freshState = getState();
                     const freshGold = freshState.profile.gold || 0;
 
@@ -518,19 +614,12 @@ const initAbout = async () => {
 
                     if (freshGold >= upgradeCost) {
                         const updatedGold = freshGold - upgradeCost;
-                        updateState({
-                            profile: {
-                                ...freshState.profile,
-                                gold: updatedGold,
-                                isElite: true
-                            }
-                        });
+                        updateState({ profile: { ...freshState.profile, gold: updatedGold, isElite: true } });
                         
                         const goldDisplay = document.getElementById('player-gold');
                         if (goldDisplay) goldDisplay.innerText = updatedGold.toLocaleString();
                         
                         window.showSimplePopup("UPGRADE SUCCESS", "Welcome to the Elite Tier, Captain!<br>Your VIP status is now active.", "var(--gold)");
-                        
                         initAbout(); 
                     } else {
                         const shortfall = upgradeCost - freshGold;
@@ -542,32 +631,53 @@ const initAbout = async () => {
     }
 
     const fetchPrizePool = async () => {
-        const prizePoolEl = document.getElementById('live-prize-pool');
-        if (!prizePoolEl) return;
+        const oldPrizePoolEl = document.getElementById('live-prize-pool');
+        const popupPrizePoolEl = document.getElementById('live-prize-pool-ton');
         
-        prizePoolEl.innerText = "CALCULATING...";
+        if (oldPrizePoolEl) oldPrizePoolEl.innerHTML = '<span style="color:#8b949e;">CALCULATING...</span>';
+        if (popupPrizePoolEl) popupPrizePoolEl.innerText = "CALCULATING...";
+
         try {
-            const solanaWeb3 = window.solanaWeb3;
-            if (solanaWeb3) {
-                // Mainnet USDC Checking
-                const connection = new solanaWeb3.Connection('https://api.mainnet-beta.solana.com', 'confirmed');
-                const adminPubkey = new solanaWeb3.PublicKey('ExNJ84TBmLsy7FB4duYteK5bWXEEuofSStPHCcA7TeQc');
-                const usdcMint = new solanaWeb3.PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC Mainnet Mint
-                
-                const tokenAccounts = await connection.getParsedTokenAccountsByOwner(adminPubkey, { mint: usdcMint });
-                let totalUsdc = 0;
-                if (tokenAccounts.value.length > 0) {
-                    totalUsdc = tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
-                }
-                prizePoolEl.innerText = `$ ${totalUsdc.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDC`;
-            } else {
-                prizePoolEl.innerText = "$ 0.00 USDC";
+            const adminWallet = 'UQCFs06is4MTGh_lOS7KsCkqvuR24bl5ypaWr6rampOM6B89'; 
+            const response = await fetch(`https://toncenter.com/api/v2/getAddressBalance?address=${adminWallet}`);
+            const data = await response.json();
+            
+            let realTon = 0;
+            
+            if (data && data.ok) {
+                realTon = parseInt(data.result) / 1000000000;
             }
+            
+            const finalTonText = `${realTon.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} TON`;
+
+            if (oldPrizePoolEl) {
+                oldPrizePoolEl.innerHTML = `
+                    <div style="color: #0098EA; font-size: 22px; font-weight: 900; text-shadow: 0 0 10px rgba(0, 152, 234, 0.6);">${finalTonText}</div>
+                    <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-bottom: 8px; letter-spacing: 0.5px;">(Elite 80% | Reg 20%)</div>
+                    <div style="color: #8b949e; font-size: 14px; margin: 4px 0;">+</div>
+                    <div style="color: var(--emerald); font-size: 18px; font-weight: 900; text-shadow: 0 0 10px rgba(46, 204, 113, 0.6); animation: pulse 2s infinite;">100,000,000 $EMRLD</div>
+                    <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-top: 4px; letter-spacing: 0.5px;">(Elite 60% | Reg 40%)</div>
+                `;
+            }
+
+            if (popupPrizePoolEl) {
+                popupPrizePoolEl.innerText = finalTonText;
+            }
+
         } catch (err) {
-            console.error("Failed to fetch Prize Pool:", err);
-            prizePoolEl.innerText = "$ 0.00 USDC";
+            if (oldPrizePoolEl) {
+                oldPrizePoolEl.innerHTML = `
+                    <div style="color: #0098EA; font-size: 22px; font-weight: 900;">0.00 TON</div>
+                    <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-bottom: 8px; letter-spacing: 0.5px;">(Elite 80% | Reg 20%)</div>
+                    <div style="color: #8b949e; font-size: 14px; margin: 4px 0;">+</div>
+                    <div style="color: var(--emerald); font-size: 18px; font-weight: 900;">100,000,000 $EMRLD</div>
+                    <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-top: 4px; letter-spacing: 0.5px;">(Elite 60% | Reg 40%)</div>
+                `;
+            }
+            if (popupPrizePoolEl) popupPrizePoolEl.innerText = "0.00 TON"; 
         }
     };
+
     fetchPrizePool();
 
     const fetchLeaderboard = async () => {
@@ -605,7 +715,6 @@ const initAbout = async () => {
     fetchLeaderboard();
 };
 
-
 document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.onclick = () => { playBGM(); playSFX('click'); switchScreen(btn.dataset.target); };
 });
@@ -642,18 +751,19 @@ if (btnDisconnectWallet) {
             overlay.remove(); 
         };
 
-        // [UPDATE] Menggunakan fungsi disconnect dompet multi-provider dari crypto.js
         document.getElementById('btn-confirm-disconnect').onclick = async () => {
             if(typeof playSFX === 'function') playSFX('click');
             overlay.remove(); 
             
             try {
-                await disconnectWallet(); // Manggil fungsi disconnect pintar
+                if (tonConnectUI.connected) {
+                    await tonConnectUI.disconnect();
+                }
                 
                 localStorage.removeItem('EMERALD_DEVICE_ID_V5');
                 localStorage.removeItem('EMERALD_SPACE_SAVE_V5');
                 
-                window.showSimplePopup("LINK SEVERED", "Wallet disconnected safely. Neural link terminated.", "var(--emerald)");
+                window.showSimplePopup("LINK SEVERED", "Wallet disconnected safely. Neural link terminated.", "#0098EA");
                 setTimeout(() => { window.location.reload(); }, 2000);
                 
             } catch (err) { 
@@ -684,9 +794,6 @@ if (navToggle && bottomNav) {
     };
 }
 
-// =========================================
-// AUDIO CONTROLS (BGM & SFX)
-// =========================================
 const btnBgm = document.getElementById('btn-toggle-bgm');
 if (btnBgm) {
     btnBgm.innerHTML = '<img src="source/icon/sub/bgm.png" style="width:20px; vertical-align:middle; filter: drop-shadow(0 0 5px var(--emerald));">';
@@ -724,5 +831,23 @@ if (btnSfx) {
         }
     };
 }
+
+// ==========================================
+// REAL-TIME BROADCAST SYSTEM
+// ==========================================
+window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--gold)") => {
+    const exist = document.getElementById('global-toast'); if(exist) exist.remove();
+    
+    const toast = document.createElement('div');
+    toast.id = 'global-toast';
+    toast.style.cssText = `position:fixed; top:65px; left:50%; transform:translateX(-50%); background:rgba(13,17,23,0.9); border:1px solid #30363d; color:#e6edf3; padding:8px 15px; border-radius:20px; font-size:10px; z-index:99998; box-shadow:0 5px 15px rgba(0,0,0,0.5); backdrop-filter:blur(5px); white-space:nowrap; transition:all 0.5s ease; opacity:0; pointer-events:none;`;
+    
+    toast.innerHTML = `ðŸ“¡ <b>GLOBAL:</b> Pilot <b style="color:var(--emerald);">${playerName}</b> ${actionText}`;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => { toast.style.opacity = '1'; toast.style.top = '75px'; }, 100);
+    setTimeout(() => { toast.style.opacity = '0'; toast.style.top = '65px'; }, 3500);
+    setTimeout(() => toast.remove(), 4000);
+};
 
 document.addEventListener("DOMContentLoaded", initGame);
