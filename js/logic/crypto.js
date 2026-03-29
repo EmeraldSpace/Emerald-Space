@@ -5,11 +5,9 @@
 import { playSFX } from './audio.js';
 
 // === MAINNET SETTINGS ===
-// Highly recommended to change this NETWORK to a paid RPC (Helius/Quicknode) for official release
-// [UPDATE] Using Helius RPC path to avoid 403 Errors. 
-// WARNING: For final production, move this RPC call to a secure backend to hide the API Key!
+// Using Helius RPC path with Domain Whitelist secured via Helius Dashboard
 const NETWORK = 'https://mainnet.helius-rpc.com/?api-key=79850b9a-0b16-45cc-9ff8-b38375ea7d14';
-const ADMIN_WALLET = 'ExNJ84TBmLsy7FB4duYteK5bWXEEuofSStPHCcA7TeQc'; // REPLACE WITH YOUR SOLANA WALLET!
+const ADMIN_WALLET = 'ExNJ84TBmLsy7FB4duYteK5bWXEEuofSStPHCcA7TeQc'; 
 const PRIVY_APP_ID = 'cmnam2ras00gj0cl22pik3xih'; 
 
 let privyClient = null;
@@ -17,6 +15,9 @@ let privyClient = null;
 export const initPrivy = async () => {
     if (!window.Privy) {
         console.error("Privy SDK not loaded in HTML!");
+        if (typeof window.showSimplePopup === 'function') {
+            window.showSimplePopup("SYSTEM ERROR", "Web3 Library failed to load. Please refresh.", "#ff4444");
+        }
         return false;
     }
     if (!privyClient) {
@@ -27,11 +28,11 @@ export const initPrivy = async () => {
                 appearance: {
                     theme: 'dark',
                     accentColor: '#14F195',
-                    logo: 'https://i.imgur.com/your-logo.png' // Replace with your game's logo URL
+                    logo: 'https://i.imgur.com/your-logo.png' 
                 },
                 embeddedWallets: {
                     createOnLogin: 'users-without-wallets',
-                    noPromptOnSignature: true // Keeps in-game transactions smooth
+                    noPromptOnSignature: true 
                 }
             }
         });
@@ -45,29 +46,18 @@ export const connectWallet = async (walletType) => {
     try {
         if (walletType === 'privy' || walletType === 'telegram') {
             await initPrivy();
-            
-            // 1. Triggers Privy popup (allows direct Telegram/Email login)
             await privyClient.login();
             
-            // 2. Fetch user data directly from Privy memory after popup closes
             const user = privyClient.user;
-
             if (user) {
-                // (OPTIONAL) The actual Privy Account ID (format: did:privy:...)
-                const privyUserId = user.id; 
-                console.log("🚀 Privy User ID:", privyUserId);
-
-                // 3. Find the Solana wallet automatically created by Privy (Embedded Wallet)
                 const solanaAccount = user.linkedAccounts.find(acc => acc.type === 'wallet' && acc.chainType === 'solana');
-                
                 if (solanaAccount) {
-                    console.log("🌌 Privy Solana Wallet:", solanaAccount.address);
                     return solanaAccount.address; 
                 } else {
-                    throw new Error("Privy failed to create an embedded Solana wallet.");
+                    throw new Error("Embedded wallet creation failed.");
                 }
             } else {
-                throw new Error("Login process cancelled or failed.");
+                throw new Error("Login cancelled.");
             }
             
         } else if (walletType === 'phantom') {
@@ -75,21 +65,22 @@ export const connectWallet = async (walletType) => {
                 const resp = await window.phantom.solana.connect();
                 return resp.publicKey.toString();
             } else {
-                window.open('https://phantom.app/', '_blank');
-                throw new Error("Phantom wallet not detected!");
+                throw new Error("Phantom not found! If on mobile, open this game inside the Phantom App browser.");
             }
         } else if (walletType === 'solflare') {
             if (window.solflare) {
                 await window.solflare.connect();
                 return window.solflare.publicKey.toString();
             } else {
-                window.open('https://solflare.com/', '_blank');
-                throw new Error("Solflare wallet not detected!");
+                throw new Error("Solflare not found! If on mobile, open this game inside the Solflare App browser.");
             }
         }
         return null;
     } catch (err) {
         console.error("Connection Error:", err);
+        if (typeof window.showSimplePopup === 'function') {
+            window.showSimplePopup("WALLET CONNECTION", err.message, "#ff4444");
+        }
         return null;
     }
 };
@@ -122,7 +113,6 @@ export const payWithSOL = async (solAmount) => {
         const toWallet = new solanaWeb3.PublicKey(ADMIN_WALLET);
         const lamports = Math.floor(solAmount * solanaWeb3.LAMPORTS_PER_SOL);
 
-        // If player logged in using Privy (Telegram/Email)
         if (privyClient && privyClient.authenticated) {
             if (typeof window.showSimplePopup === 'function') {
                 window.showSimplePopup("SMART CONTRACT", `Processing payment of <strong>${solAmount} SOL</strong>...`, "var(--gold)");
@@ -133,7 +123,6 @@ export const payWithSOL = async (solAmount) => {
                 solanaWeb3.SystemProgram.transfer({ fromPubkey: fromWallet, toPubkey: toWallet, lamports })
             );
             
-            // Execute transaction directly via Privy embedded wallet
             const provider = await privyClient.getSolanaProvider();
             const signature = await provider.sendTransaction(tx, connection);
             
@@ -141,7 +130,6 @@ export const payWithSOL = async (solAmount) => {
             return { success: true, signature };
 
         } else {
-            // If player logged in using Extension (Phantom / Solflare)
             let provider = null;
             if (window.phantom && window.phantom.solana && window.phantom.solana.isConnected) provider = window.phantom.solana;
             else if (window.solflare && window.solflare.isConnected) provider = window.solflare;
@@ -206,7 +194,7 @@ export const checkSolBalance = async () => {
  */
 export const checkEmrldBalance = async () => {
     try {
-        // [UPDATE] TBA: Token not yet officially launched. Kept empty to disable VIP gates safely.
+        // TBA: Token not yet officially launched. Kept empty to disable VIP gates safely.
         const EMRLD_MINT_ADDRESS = ''; 
         
         if (!EMRLD_MINT_ADDRESS) {
@@ -229,14 +217,12 @@ export const checkEmrldBalance = async () => {
 
         const connection = new solanaWeb3.Connection(NETWORK, 'confirmed');
         
-        // Fetch token accounts owned by the wallet for the specific Mint Address
         const tokenAccounts = await connection.getParsedTokenAccountsByOwner(pubKey, {
             mint: new solanaWeb3.PublicKey(EMRLD_MINT_ADDRESS)
         });
 
-        if (tokenAccounts.value.length === 0) return 0; // Does not hold the token
+        if (tokenAccounts.value.length === 0) return 0; 
 
-        // Get the parsed UI amount (actual token amount, decimals adjusted)
         const balance = tokenAccounts.value[0].account.data.parsed.info.tokenAmount.uiAmount;
         return balance;
         
