@@ -1,5 +1,5 @@
 /* =========================================
-   INVENTORY UI CONTROLLER - POLISHED (BALANCED ECONOMY)
+   INVENTORY UI CONTROLLER - POLISHED (BALANCED ECONOMY - TON READY)
    ========================================= */
 
 import { getState, updateState } from '../logic/state.js';
@@ -236,6 +236,7 @@ function showActionMenu(item, isEquipped, slotId) {
         if (btnUp) {
             btnUp.onclick = () => {
                 const s = getState();
+                // [UPDATE]: Penghapusan Filter isSOL / isTON agar upgrade bekerja untuk semua tipe item yang sama
                 const duplicateItem = s.inventory.find(i => i.id !== item.id && i.type === item.type && i.rarity === item.rarity);
                 const rule = UPGRADE_RULES[item.rarity];
 
@@ -305,7 +306,7 @@ function showSellMaterialPopup(matKey, maxQty, pricePerUnit, matName, iconPath) 
     };
 }
 
-// === FUNGSI UTAMA UNTUK POPUP BERIKON (EFEK MELAYANG DIHILANGKAN) ===
+// === FUNGSI UTAMA UNTUK POPUP BERIKON ===
 function showCustomPopup(title, message, iconPath = null, isConfirm = false, onYes = null, themeColor = "var(--emerald)") {
     const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
     const overlay = document.createElement('div'); overlay.id = 'scifi-popup'; overlay.className = 'modal-overlay z-alert';
@@ -317,7 +318,6 @@ function showCustomPopup(title, message, iconPath = null, isConfirm = false, onY
         btns = `<button id="btn-pop-ok" class="btn-action green mt-20 text-black" style="background:${themeColor}; box-shadow: 0 0 15px ${themeColor}44;">UNDERSTOOD</button>`;
     }
     
-    // [UPDATE]: Menghapus 'animation: floatUpAnim 2s infinite ease-in-out alternate;' agar gambar statis
     let iconHTML = iconPath ? `<div style="display:flex; justify-content:center; margin-bottom:15px;"><img src="${iconPath}" style="width:60px; height:60px; object-fit:contain; filter:drop-shadow(0 0 15px ${themeColor}88);"></div>` : '';
 
     overlay.innerHTML = `<div class="modal-box" style="border-color: ${themeColor}; box-shadow: 0 0 30px ${themeColor}44; background:#0d1117;">
