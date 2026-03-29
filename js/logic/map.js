@@ -7,7 +7,7 @@ import { MAP_DATA } from '../data/monsters.js';
 /**
  * Location Transition Logic (Warp Drive)
  */
-export const travelToLocation = (locationId, player, currentEmrldBalance = 0) => {
+export const travelToLocation = (locationId, player, currentTonBalance = 0) => {
     const targetMap = MAP_DATA.find(m => m.id === locationId) || MAP_DATA[locationId];
 
     // Failsafe if coordinates are not found
@@ -26,14 +26,14 @@ export const travelToLocation = (locationId, player, currentEmrldBalance = 0) =>
         };
     }
 
-    // 2. Special Map Requirement Validation (Web3 Token - $EMRLD)
+    // 2. Special Map Requirement Validation (Web3 Token)
     const isVipMap = targetMap.reqToken ? true : false;
-    const reqAmount = 1000000; // 1 Million $EMRLD Requirement
+    const reqAmount = 100; // Syarat disinkronkan ke 100 TON sesuai mapUI.js
 
-    if (isVipMap && currentEmrldBalance < reqAmount) {
+    if (isVipMap && currentTonBalance < reqAmount) {
         return { 
             success: false, 
-            message: `🔒 Restricted Area! Sensors detect insufficient Web3 balance. Requires at least 1,000,000 $EMRLD.` 
+            message: `🔒 Restricted Area! Sensors detect insufficient Web3 balance. Requires at least ${reqAmount} TON.` 
         };
     }
 
@@ -55,18 +55,18 @@ export const getMapMonsters = (locationId) => {
 /**
  * Check if a location is locked (SYNCED WITH mapUI.js)
  */
-export const checkMapAccess = (map, player, currentEmrldBalance = 0) => {
+export const checkMapAccess = (map, player, currentTonBalance = 0) => {
     const levelLocked = player.level < map.minLevel;
     
     // VIP Requirement: If there is reqToken in monster data
     const isVipMap = map.reqToken ? true : false;
-    const reqAmount = 1000000; // 1 Million $EMRLD Requirement
+    const reqAmount = 100; // Syarat disinkronkan ke 100 TON sesuai mapUI.js
     
-    const tokenLocked = isVipMap && currentEmrldBalance < reqAmount;
+    const tokenLocked = isVipMap && currentTonBalance < reqAmount;
     
     return {
         isLocked: levelLocked || tokenLocked,
         // UI Text updated for smaller screen fitting
-        reason: levelLocked ? `Lv. ${map.minLevel} Req.` : (tokenLocked ? "1M $EMRLD Req." : "")
+        reason: levelLocked ? `Lv. ${map.minLevel} Req.` : (tokenLocked ? "100 TON Req." : "")
     };
 };
