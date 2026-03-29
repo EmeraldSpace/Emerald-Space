@@ -1,5 +1,5 @@
 /* =========================================
-   CORE APP - EMERALD SPACE (TON NETWORK READY)
+   CORE APP - EMERALD SPACE (SOLANA NETWORK READY)
    ========================================= */
 
 import { getState, updateState, loadStateFromServer, getTopPlayers, checkAndRecoverWallet, setReferrer } from './js/logic/state.js';
@@ -11,7 +11,7 @@ import { initShop } from './js/ui/shopUI.js';
 import { updateTopBar as battleUpdateTopBar } from './js/ui/battleUI.js';
 import { playSFX, playBGM, toggleBGM, toggleSFX } from './js/logic/audio.js';
 import { initStarfield } from './js/ui/starfield.js'; 
-import { tonConnectUI } from './js/logic/crypto.js'; 
+import { connectSolanaWallet } from './js/logic/crypto.js'; 
 
 let connectedWalletAddress = null;
 
@@ -31,7 +31,7 @@ window.copyAddress = (targetId) => {
     const exist = document.getElementById('sys-toast'); if(exist) exist.remove();
     const toast = document.createElement('div');
     toast.id = 'sys-toast';
-    toast.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#0098EA; color:#fff; padding:10px 20px; border-radius:6px; font-weight:900; font-size:12px; z-index:99999; box-shadow:0 0 15px #0098EA; transition: opacity 0.5s ease-in-out; text-transform:uppercase; letter-spacing:1px;';
+    toast.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#14F195; color:#000; padding:10px 20px; border-radius:6px; font-weight:900; font-size:12px; z-index:99999; box-shadow:0 0 15px #14F195; transition: opacity 0.5s ease-in-out; text-transform:uppercase; letter-spacing:1px;';
     toast.innerHTML = '📋‹ COPIED!';
     document.body.appendChild(toast);
     
@@ -221,7 +221,7 @@ const checkAccountSetup = () => {
 
                 if (!usernameInput || usernameInput === 'ANONYMOUS') { window.showSimplePopup("INVALID IDENTITY", "Please enter a valid Pilot Name!", "#ff4444"); return; }
                 
-                if (!connectedWalletAddress) { window.showSimplePopup("ACCESS DENIED", "Please connect your TON Wallet to play.", "#ff4444"); return; }
+                if (!connectedWalletAddress) { window.showSimplePopup("ACCESS DENIED", "Please connect your Solana Wallet to play.", "#ff4444"); return; }
 
                 updateState({ 
                     profile: { 
@@ -254,80 +254,80 @@ const checkAccountSetup = () => {
 };
 
 // ==========================================
-// TON CONNECT LISTENER
+// SOLANA CONNECT LISTENER
 // ==========================================
 const btnOpenPopup = document.getElementById('btn-open-wallet-popup');
-const walletOverlay = document.getElementById('wallet-select-overlay');
-const btnCancel = document.getElementById('btn-cancel-select');
 const walletStatusDiv = document.getElementById('wallet-status');
 const walletAddressDisplay = document.getElementById('wallet-address-display');
 
-if (btnOpenPopup) btnOpenPopup.onclick = () => { playSFX('click'); walletOverlay.style.display = 'flex'; };
-if (btnCancel) btnCancel.onclick = () => { playSFX('click'); walletOverlay.style.display = 'none'; };
-if (walletOverlay) walletOverlay.onclick = (event) => { if (event.target === walletOverlay) walletOverlay.style.display = 'none'; };
+const walletOverlay = document.getElementById('wallet-select-overlay');
+if (walletOverlay) walletOverlay.style.display = 'none';
 
-tonConnectUI.onStatusChange(async (wallet) => {
-    if (wallet) {
-        connectedWalletAddress = wallet.account.address;
-        if(walletOverlay) walletOverlay.style.display = 'none';
+if (btnOpenPopup) {
+    btnOpenPopup.innerText = "CONNECT SOLANA WALLET";
+    btnOpenPopup.style.color = "#14F195"; 
+    btnOpenPopup.style.borderColor = "#14F195";
+    btnOpenPopup.style.background = "rgba(20, 241, 149, 0.1)";
+
+    btnOpenPopup.onclick = async () => {
+        if(typeof playSFX === 'function') playSFX('click');
         
-        const isRecovered = await checkAndRecoverWallet(connectedWalletAddress);
-        if (isRecovered) {
-            const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
-            window.showSimplePopup("ACCOUNT RECOVERED", "Old save data found! Restoring your fleet...", "#0098EA");
-            setTimeout(() => window.location.reload(), 2000);
-            return; 
-        }
-
-        let inviterWallet = null;
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-            const startParam = window.Telegram.WebApp.initDataUnsafe.start_param;
-            if (startParam && startParam !== connectedWalletAddress) {
-                inviterWallet = startParam;
+        const result = await connectSolanaWallet();
+        
+        if (result.success) {
+            let currentWalletAddr = result.address;
+            
+            const isRecovered = await checkAndRecoverWallet(currentWalletAddr);
+            if (isRecovered) {
+                window.showSimplePopup("ACCOUNT RECOVERED", "Old save data found! Restoring your fleet...", "#14F195");
+                setTimeout(() => window.location.reload(), 2000);
+                return; 
             }
+
+            let inviterWallet = null;
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
+                const startParam = window.Telegram.WebApp.initDataUnsafe.start_param;
+                if (startParam && startParam !== currentWalletAddr) {
+                    inviterWallet = startParam;
+                }
+            }
+
+            if (inviterWallet) {
+                await setReferrer(currentWalletAddr, inviterWallet);
+            }
+            
+            let myTelegramId = null;
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+                myTelegramId = window.Telegram.WebApp.initDataUnsafe.user.id.toString();
+            }
+
+            const state = getState();
+            updateState({ 
+                profile: { 
+                    ...state.profile, 
+                    walletAddress: currentWalletAddr,
+                    telegram_id: myTelegramId 
+                } 
+            });
+
+            btnOpenPopup.style.display = 'none';
+            if (walletStatusDiv) {
+                walletStatusDiv.style.display = 'block';
+                walletStatusDiv.style.borderColor = '#14F195';
+                walletStatusDiv.style.background = 'rgba(20, 241, 149, 0.1)';
+                walletStatusDiv.querySelector('p').style.color = '#14F195';
+            }
+
+            const shortAddress = currentWalletAddr.slice(0, 4) + '...' + currentWalletAddr.slice(-4);
+            
+            if (walletAddressDisplay) {
+                walletAddressDisplay.innerText = shortAddress;
+            }
+
+            window.showSimplePopup("SIGNAL SECURED", `Mainframe synced to Solana Wallet:<br><strong style="color:#14F195; word-break:break-all;">${shortAddress}</strong>`, "#14F195");
         }
-
-        if (inviterWallet) {
-            await setReferrer(connectedWalletAddress, inviterWallet);
-        }
-        
-        // PENANGKAP TELEGRAM ID
-        let myTelegramId = null;
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-            myTelegramId = window.Telegram.WebApp.initDataUnsafe.user.id.toString();
-        }
-
-        const state = getState();
-        updateState({ 
-            profile: { 
-                ...state.profile, 
-                walletAddress: connectedWalletAddress,
-                telegram_id: myTelegramId 
-            } 
-        });
-
-        if (btnOpenPopup) btnOpenPopup.style.display = 'none';
-        if (walletStatusDiv) {
-            walletStatusDiv.style.display = 'block';
-            walletStatusDiv.style.borderColor = '#0098EA';
-            walletStatusDiv.style.background = 'rgba(0, 152, 234, 0.1)';
-            walletStatusDiv.querySelector('p').style.color = '#0098EA';
-        }
-
-        const shortAddress = connectedWalletAddress.slice(0, 4) + '...' + connectedWalletAddress.slice(-4);
-        
-        if (walletAddressDisplay) {
-            walletAddressDisplay.innerText = shortAddress;
-        }
-
-        const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
-        window.showSimplePopup("SIGNAL SECURED", `Mainframe synced to TON Wallet:<br><strong style="color:#0098EA; word-break:break-all;">${shortAddress}</strong>`, "#0098EA");
-        
-    } else {
-        connectedWalletAddress = null;
-    }
-});
-
+    };
+}
 
 const initGame = async () => {
     try {
@@ -343,7 +343,7 @@ const initGame = async () => {
         const loadingDiv = document.createElement('div');
         loadingDiv.id = 'screen-loading';
         loadingDiv.className = 'screen';
-        loadingDiv.innerHTML = `<h2 style="color:#0098EA; text-align:center; margin-top:50vh; transform:translateY(-50%); animation: pulse 1.5s infinite;">ESTABLISHING CONNECTION...</h2>`;
+        loadingDiv.innerHTML = `<h2 style="color:#14F195; text-align:center; margin-top:50vh; transform:translateY(-50%); animation: pulse 1.5s infinite;">ESTABLISHING CONNECTION...</h2>`;
         appContent.appendChild(loadingDiv);
         switchScreen('loading');
 
@@ -408,7 +408,7 @@ const initAbout = async () => {
                     
                     <div style="background:#161b22; border:1px solid #30363d; padding:12px; border-radius:6px; margin-bottom:15px; word-break:break-all;">
                         <span style="font-size: 10px; color: #8b949e; letter-spacing: 1px; display:block; margin-bottom:5px;">YOUR SHORT LINK:</span>
-                        <span id="ref-link-text" style="color:#00eaff; font-size:12px; font-weight:bold;">${refLink}</span>
+                        <span id="ref-link-text" style="color:#14F195; font-size:12px; font-weight:bold;">${refLink}</span>
                     </div>
                     
                     <div style="display:flex; gap:10px;">
@@ -440,10 +440,10 @@ const initAbout = async () => {
             overlay.className = 'modal-overlay z-menu';
             
             overlay.innerHTML = `
-                <div class="modal-box" style="border-color: #0098EA; box-shadow: 0 0 30px rgba(0, 152, 234, 0.2); background: #0d1117; width: 90%; max-width: 480px; max-height: 85vh; overflow-y: auto; text-align: left; padding: 25px;">
+                <div class="modal-box" style="border-color: #14F195; box-shadow: 0 0 30px rgba(20, 241, 149, 0.2); background: #0d1117; width: 90%; max-width: 480px; max-height: 85vh; overflow-y: auto; text-align: left; padding: 25px;">
                     
-                    <h2 style="color: #0098EA; text-align: center; margin-bottom: 15px; letter-spacing: 2px; font-size: 18px; text-shadow: 0 0 10px #0098EA;">
-                        <img src="source/icon/about.png" style="width:24px; vertical-align:-5px; filter: drop-shadow(0 0 5px #0098EA); margin-right: 5px;"> 
+                    <h2 style="color: #14F195; text-align: center; margin-bottom: 15px; letter-spacing: 2px; font-size: 18px; text-shadow: 0 0 10px #14F195;">
+                        <img src="source/icon/about.png" style="width:24px; vertical-align:-5px; filter: drop-shadow(0 0 5px #14F195); margin-right: 5px;"> 
                         OFFICIAL WHITEPAPER
                     </h2>
 
@@ -453,7 +453,7 @@ const initAbout = async () => {
                         <h3 style="color: var(--gold); font-size: 14px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 5px var(--gold);">🏆 GLOBAL PRIZE POOL</h3>
                         <p style="color: #8b949e; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">Awaiting Seasonal Distribution</p>
                         
-                        <div id="live-prize-pool-ton" style="color: #0098EA; font-size: 26px; font-weight: 900; text-shadow: 0 0 15px rgba(0, 152, 234, 0.6); margin-bottom: 2px; letter-spacing: 1px;">CALCULATING...</div>
+                        <div id="live-prize-pool-ton" style="color: #14F195; font-size: 26px; font-weight: 900; text-shadow: 0 0 15px rgba(20, 241, 149, 0.6); margin-bottom: 2px; letter-spacing: 1px;">CALCULATING...</div>
                         <div style="color: #8b949e; font-size: 10px; font-weight: bold; margin-bottom: 10px;">Distribution: <span style="color:var(--gold);">Elite 80%</span> | <span style="color:#e6edf3;">Reg 20%</span></div>
                         
                         <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 5px;">
@@ -468,7 +468,7 @@ const initAbout = async () => {
                     <div style="background: rgba(46, 204, 113, 0.05); border-left: 3px solid var(--emerald); padding: 12px; margin-bottom: 20px; border-radius: 0 6px 6px 0;">
                         <strong style="color: var(--emerald); font-size: 13px; display: block; margin-bottom: 4px; text-transform: uppercase;">The TMA Paradigm Shift</strong>
                         <p style="color: #c9d1d9; font-size: 11px; line-height: 1.6; margin: 0; text-align: justify;">
-                            Emerald Space is pioneering the next generation of <strong>Telegram Mini-Apps (TMA)</strong> powered directly by the TON Network. We are dismantling the predatory "Play-to-Earn" model. By merging hyper-deflationary tokenomics with a sustainable organic treasury, we guarantee that the value created by the players, stays with the playersâ€”safely in your Telegram Wallet.
+                            Emerald Space is pioneering the next generation of <strong>Telegram Mini-Apps (TMA)</strong> powered directly by the Solana Network. We are dismantling the predatory "Play-to-Earn" model. By merging hyper-deflationary tokenomics with a sustainable organic treasury, we guarantee that the value created by the players, stays with the players.
                         </p>
                     </div>
                     
@@ -476,32 +476,32 @@ const initAbout = async () => {
                         💎 Strategic Token Distribution
                     </h3>
                     <p style="color: #8b949e; font-size: 11px; line-height: 1.6; margin-bottom: 12px; text-align: justify;">
-                        Total Supply: <strong style="color:#e6edf3;">1,000,000,000 $EMRLD</strong>. Our economy is designed for sustainable growth, rewarding active pilots and early adopters in the TON ecosystem.
+                        Total Supply: <strong style="color:#e6edf3;">1,000,000,000 $EMRLD</strong>. Our economy is designed for sustainable growth, rewarding active pilots and early adopters in the Solana ecosystem.
                     </p>
                     
                     <div style="background: #161b22; border: 1px solid #30363d; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">ðŸŽ® Play-to-Airdrop (35%)</span>
+                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">🎮 Play-to-Airdrop (35%)</span>
                             <strong style="color:#2ecc71; font-size:11px; text-align: right; line-height: 1.4;">350,000,000</strong>
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">ðŸ’§ Liquidity & MM (20%)</span>
-                            <strong style="color:#0098EA; font-size:11px; text-align: right; line-height: 1.4;">200,000,000</strong>
+                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">💧 Liquidity & MM (20%)</span>
+                            <strong style="color:#14F195; font-size:11px; text-align: right; line-height: 1.4;">200,000,000</strong>
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">ðŸš€ Ecosystem & Marketing (15%)</span>
+                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">🚀 Ecosystem & Marketing (15%)</span>
                             <strong style="color:#e6edf3; font-size:11px; text-align: right; line-height: 1.4;">150,000,000</strong>
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">ðŸ› ï¸ Core Team (15%)</span>
+                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">🛠️ Core Team (15%)</span>
                             <strong style="color:#ff4444; font-size:11px; text-align: right; line-height: 1.4;">150,000,000 <span style="font-size:9px; font-weight:normal; color:#8b949e; display:block;">(24-Month Vesting)</span></strong>
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">ðŸŽ–ï¸ Early Adopters (10%)</span>
+                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">🎖️ Early Adopters (10%)</span>
                             <strong style="color:var(--gold); font-size:11px; text-align: right; line-height: 1.4;">100,000,000 <span style="font-size:9px; font-weight:normal; color:#8b949e; display:block;">(Elite & Beta Players)</span></strong>
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">ðŸ¤ Advisors & Partners (5%)</span>
+                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">🤝 Advisors & Partners (5%)</span>
                             <strong style="color:#e6edf3; font-size:11px; text-align: right; line-height: 1.4;">50,000,000</strong>
                         </div>
                     </div>
@@ -510,13 +510,13 @@ const initAbout = async () => {
                         ⚙️ The Deflationary Engine
                     </h3>
                     <p style="color: #8b949e; font-size: 11px; line-height: 1.6; margin-bottom: 12px; text-align: justify;">
-                        Our economy relies on an aggressive, self-sustaining flywheel. Every time a pilot spends TON in-game, the system automatically triggers a market intervention:
+                        Our economy relies on an aggressive, self-sustaining flywheel. Every time a pilot spends SOL in-game, the system automatically triggers a market intervention:
                     </p>
                     
                     <div style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
-                        <div style="background: rgba(0, 152, 234, 0.05); padding: 10px; border-radius: 6px; border-left: 2px solid #0098EA;">
-                            <strong style="color:#0098EA; font-size:12px; display:block; margin-bottom:2px;">1. Auto-Buyback (60%)</strong>
-                            <span style="color:#e6edf3; font-size:10px; line-height:1.4;">60% of all in-game TON revenue is injected straight into the liquidity pool to buy back $EMRLD from the open market, creating constant buying pressure.</span>
+                        <div style="background: rgba(20, 241, 149, 0.05); padding: 10px; border-radius: 6px; border-left: 2px solid #14F195;">
+                            <strong style="color:#14F195; font-size:12px; display:block; margin-bottom:2px;">1. Auto-Buyback (60%)</strong>
+                            <span style="color:#e6edf3; font-size:10px; line-height:1.4;">60% of all in-game SOL revenue is injected straight into the liquidity pool to buy back $EMRLD from the open market, creating constant buying pressure.</span>
                         </div>
                         
                         <div style="background: rgba(255, 68, 68, 0.05); padding: 10px; border-radius: 6px; border-left: 2px solid #ff4444;">
@@ -536,10 +536,10 @@ const initAbout = async () => {
                     <ul style="color: #8b949e; font-size: 11px; line-height: 1.6; padding-left: 20px; margin-bottom: 25px;">
                         <li style="margin-bottom: 6px;"><strong style="color:#e6edf3;">Elite Clearance:</strong> Holding $EMRLD is the only way to unlock VIP Map Sectors, secure Whitelist allocations, and access high-tier resource drops.</li>
                         <li style="margin-bottom: 6px;"><strong style="color:#e6edf3;">The Cosmic Black Market:</strong> $EMRLD serves as the backbone currency for peer-to-peer trading of rare ship blueprints and mythic armaments.</li>
-                        <li><strong style="color:#ffca28; text-shadow: 0 0 5px rgba(255,202,40,0.4);">Official TON NFT Arsenal (Phase 2):</strong> Elite Ships and Mythic Gear will soon be minted as true TON NFTs. $EMRLD will be the <strong>exclusive fuel</strong> required to forge, upgrade, and deploy these tournament-grade assets.</li>
+                        <li><strong style="color:#ffca28; text-shadow: 0 0 5px rgba(255,202,40,0.4);">Official Solana NFT Arsenal (Phase 2):</strong> Elite Ships and Mythic Gear will soon be minted as true Solana NFTs. $EMRLD will be the <strong>exclusive fuel</strong> required to forge, upgrade, and deploy these tournament-grade assets.</li>
                     </ul>
                     
-                    <button id="btn-close-tokenomics" style="width: 100%; padding: 14px; background: transparent; border: 1px solid #0098EA; color: #0098EA; font-weight: 900; border-radius: 6px; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; box-shadow: inset 0 0 10px rgba(0,152,234,0.1);">
+                    <button id="btn-close-tokenomics" style="width: 100%; padding: 14px; background: transparent; border: 1px solid #14F195; color: #14F195; font-weight: 900; border-radius: 6px; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; box-shadow: inset 0 0 10px rgba(20,241,149,0.1);">
                         ACKNOWLEDGE & CLOSE
                     </button>
                 </div>
@@ -547,8 +547,8 @@ const initAbout = async () => {
             document.body.appendChild(overlay);
             
             const closeBtn = document.getElementById('btn-close-tokenomics');
-            closeBtn.onmouseover = () => { closeBtn.style.background = '#0098EA'; closeBtn.style.color = '#fff'; };
-            closeBtn.onmouseout = () => { closeBtn.style.background = 'transparent'; closeBtn.style.color = '#0098EA'; };
+            closeBtn.onmouseover = () => { closeBtn.style.background = '#14F195'; closeBtn.style.color = '#000'; };
+            closeBtn.onmouseout = () => { closeBtn.style.background = 'transparent'; closeBtn.style.color = '#14F195'; };
             closeBtn.onclick = () => {
                 if(typeof playSFX === 'function') playSFX('click'); 
                 overlay.remove();
@@ -638,21 +638,10 @@ const initAbout = async () => {
         if (popupPrizePoolEl) popupPrizePoolEl.innerText = "CALCULATING...";
 
         try {
-            const adminWallet = 'UQCFs06is4MTGh_lOS7KsCkqvuR24bl5ypaWr6rampOM6B89'; 
-            const response = await fetch(`https://toncenter.com/api/v2/getAddressBalance?address=${adminWallet}`);
-            const data = await response.json();
-            
-            let realTon = 0;
-            
-            if (data && data.ok) {
-                realTon = parseInt(data.result) / 1000000000;
-            }
-            
-            const finalTonText = `${realTon.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} TON`;
-
+            // Kita biarkan admin wallet divalidasi nanti karena API SOL berbeda dari TON
             if (oldPrizePoolEl) {
                 oldPrizePoolEl.innerHTML = `
-                    <div style="color: #0098EA; font-size: 22px; font-weight: 900; text-shadow: 0 0 10px rgba(0, 152, 234, 0.6);">${finalTonText}</div>
+                    <div style="color: #14F195; font-size: 22px; font-weight: 900; text-shadow: 0 0 10px rgba(20, 241, 149, 0.6);">LOADING SOL...</div>
                     <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-bottom: 8px; letter-spacing: 0.5px;">(Elite 80% | Reg 20%)</div>
                     <div style="color: #8b949e; font-size: 14px; margin: 4px 0;">+</div>
                     <div style="color: var(--emerald); font-size: 18px; font-weight: 900; text-shadow: 0 0 10px rgba(46, 204, 113, 0.6); animation: pulse 2s infinite;">100,000,000 $EMRLD</div>
@@ -661,20 +650,21 @@ const initAbout = async () => {
             }
 
             if (popupPrizePoolEl) {
-                popupPrizePoolEl.innerText = finalTonText;
+                popupPrizePoolEl.innerText = "LOADING SOL...";
             }
 
         } catch (err) {
+            // Error handling
             if (oldPrizePoolEl) {
                 oldPrizePoolEl.innerHTML = `
-                    <div style="color: #0098EA; font-size: 22px; font-weight: 900;">0.00 TON</div>
+                    <div style="color: #14F195; font-size: 22px; font-weight: 900;">0.00 SOL</div>
                     <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-bottom: 8px; letter-spacing: 0.5px;">(Elite 80% | Reg 20%)</div>
                     <div style="color: #8b949e; font-size: 14px; margin: 4px 0;">+</div>
                     <div style="color: var(--emerald); font-size: 18px; font-weight: 900;">100,000,000 $EMRLD</div>
                     <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-top: 4px; letter-spacing: 0.5px;">(Elite 60% | Reg 40%)</div>
                 `;
             }
-            if (popupPrizePoolEl) popupPrizePoolEl.innerText = "0.00 TON"; 
+            if (popupPrizePoolEl) popupPrizePoolEl.innerText = "0.00 SOL"; 
         }
     };
 
@@ -756,14 +746,15 @@ if (btnDisconnectWallet) {
             overlay.remove(); 
             
             try {
-                if (tonConnectUI.connected) {
-                    await tonConnectUI.disconnect();
+                const provider = window.solana || (window.phantom && window.phantom.solana);
+                if (provider) {
+                    await provider.disconnect();
                 }
                 
                 localStorage.removeItem('EMERALD_DEVICE_ID_V5');
                 localStorage.removeItem('EMERALD_SPACE_SAVE_V5');
                 
-                window.showSimplePopup("LINK SEVERED", "Wallet disconnected safely. Neural link terminated.", "#0098EA");
+                window.showSimplePopup("LINK SEVERED", "Wallet disconnected safely. Neural link terminated.", "#14F195");
                 setTimeout(() => { window.location.reload(); }, 2000);
                 
             } catch (err) { 
@@ -842,7 +833,7 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
     toast.id = 'global-toast';
     toast.style.cssText = `position:fixed; top:65px; left:50%; transform:translateX(-50%); background:rgba(13,17,23,0.9); border:1px solid #30363d; color:#e6edf3; padding:8px 15px; border-radius:20px; font-size:10px; z-index:99998; box-shadow:0 5px 15px rgba(0,0,0,0.5); backdrop-filter:blur(5px); white-space:nowrap; transition:all 0.5s ease; opacity:0; pointer-events:none;`;
     
-    toast.innerHTML = 📡 <b>GLOBAL:</b> Pilot <b style="color:var(--emerald);">${playerName}</b> ${actionText}`;
+    toast.innerHTML = `📡 <b>GLOBAL:</b> Pilot <b style="color:var(--emerald);">${playerName}</b> ${actionText}`;
     document.body.appendChild(toast);
     
     setTimeout(() => { toast.style.opacity = '1'; toast.style.top = '75px'; }, 100);
