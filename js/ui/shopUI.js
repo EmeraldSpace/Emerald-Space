@@ -1,10 +1,10 @@
 /* =========================================
-   SHOP UI CONTROLLER - PURE SOL (WEB3 GACHA & GOLD)
+   SHOP UI CONTROLLER - TON NETWORK (WEB3 GACHA & GOLD)
    ========================================= */
 
 import { buyMaterial, SHOP_ITEMS } from '../logic/shop.js';
 import { getState, updateState } from '../logic/state.js';
-import { payWithSOL } from '../logic/crypto.js'; 
+import { payWithTON } from '../logic/crypto.js'; 
 import { playSFX } from '../logic/audio.js'; 
 
 let isProcessingShop = false;
@@ -58,20 +58,20 @@ const refreshShopUI = () => {
     document.querySelectorAll('.btn-buy').forEach(btn => {
         const itemKey = btn.dataset.item;
         const itemData = SHOP_ITEMS[itemKey];
-        const currentPrice = parseFloat(btn.dataset.price) || itemData.price;
+        const currentPrice = parseInt(btn.dataset.price) || itemData.price;
+        
+        // [CLEANUP] Hanya mengecek TON
+        const isCrypto = itemData.isTON === true;
 
         let canAfford = false;
-        if (itemData.isSOL) {
-            canAfford = true; 
-        } else {
-            canAfford = state.profile.gold >= currentPrice;
-        }
+        if (isCrypto) canAfford = true; 
+        else canAfford = state.profile.gold >= currentPrice;
 
         const maxS = state.profile.maxStamina || 50;
         const curS = state.profile.stamina !== undefined ? state.profile.stamina : maxS;
         const isStaminaFull = itemKey === 'STAMINA_REFILL' && curS >= maxS;
 
-        btn.disabled = (!canAfford && !itemData.isSOL) || isStaminaFull;
+        btn.disabled = (!canAfford && !isCrypto) || isStaminaFull;
 
         if (isStaminaFull) {
             btn.innerText = 'MAXED';
@@ -80,7 +80,7 @@ const refreshShopUI = () => {
             btn.style.boxShadow = 'none';
             btn.style.cursor = 'not-allowed';
             btn.style.borderColor = '#30363d';
-        } else if (!canAfford && !itemData.isSOL) {
+        } else if (!canAfford && !isCrypto) {
             btn.innerText = 'BUY';
             btn.style.background = '#30363d';
             btn.style.color = '#8b949e';
@@ -90,10 +90,11 @@ const refreshShopUI = () => {
         } else {
             btn.innerText = 'BUY';
             btn.style.cursor = 'pointer';
-            if (itemData.isSOL) {
-                btn.style.background = 'var(--gold)';
-                btn.style.color = '#000';
-                btn.style.boxShadow = '0 0 15px rgba(255,202,40,0.4)';
+            if (isCrypto) {
+                btn.style.background = '#0098EA'; 
+                btn.style.color = '#fff';
+                btn.style.boxShadow = '0 0 15px rgba(0, 152, 234, 0.4)';
+                btn.style.border = 'none';
             } else {
                 btn.style.background = 'var(--emerald)';
                 btn.style.color = '#000';
@@ -124,7 +125,7 @@ export const initShop = () => {
     list.innerHTML = ''; 
 
     const catBlackMarket = createShopCategory('shop-cat-bm', '<img src="source/icon/sub/dice.png" style="width:16px; vertical-align:-2px; margin-right:8px;">BLACK MARKET CRATES (WEB3)', '#ff0055', true);
-    const catGold = createShopCategory('shop-cat-gold', '<img src="source/item/gold.png" style="width:16px; vertical-align:-2px; margin-right:8px;">Buy Gold (SOL)', 'var(--gold)', true);
+    const catGold = createShopCategory('shop-cat-gold', '<img src="source/item/gold.png" style="width:16px; vertical-align:-2px; margin-right:8px;">Buy Gold (TON)', '#0098EA', true);
     const catItem = createShopCategory('shop-cat-item', '<img src="source/icon/sub/crate.png" style="width:16px; vertical-align:-2px; margin-right:8px;">Items & Materials', '#3498db', true);
     const catEquip = createShopCategory('shop-cat-equip', '<img src="source/icon/sub/def.png" style="width:16px; vertical-align:-2px; margin-right:8px;">Ship Equipment', 'var(--emerald)', true);
 
@@ -133,35 +134,33 @@ export const initShop = () => {
     list.appendChild(catItem); 
     list.appendChild(catEquip);
 
-    // [UPDATE MAINNET] Harga Gacha disesuaikan dengan skala Mainnet (Lebih kecil)
+    // === RENDER GACHA (TON) ===
     const CRATES = [
-        { id: 1, name: "BASIC CRATE", cost: 0.005, color: "#a0a0a0", desc: "Low chance for good items. Normal quantity." },
-        { id: 2, name: "ADVANCED CRATE", cost: 0.01, color: "#3498db", desc: "Better odds. Higher material drops & stats." },
-        { id: 3, name: "ELITE CRATE", cost: 0.02, color: "#9b59b6", desc: "Excellent chances for Epic & Mythic drops." },
-        { id: 4, name: "SUPREME CRATE", cost: 0.05, color: "#ffca28", desc: "Top Tier! No Commons. High Legendary chance!" }
+        { id: 1, name: "BASIC CRATE", cost: 0.05, color: "#a0a0a0", desc: "Low chance for good items. Normal quantity." },
+        { id: 2, name: "ADVANCED CRATE", cost: 0.1, color: "#3498db", desc: "Better odds. Higher material drops & stats." },
+        { id: 3, name: "ELITE CRATE", cost: 0.2, color: "#9b59b6", desc: "Excellent chances for Epic & Mythic drops." },
+        { id: 4, name: "SUPREME CRATE", cost: 0.5, color: "#ffca28", desc: "Top Tier! No Commons. High Legendary chance!" }
     ];
 
     CRATES.forEach(crate => {
-        let btnStyle = `background:${crate.color}; color:#000; font-weight:900; letter-spacing:1px; box-shadow: 0 0 10px ${crate.color}; transition: all 0.3s;`;
+        let btnStyle = `background:${crate.color}; color:#000; font-weight:900; letter-spacing:1px; box-shadow: 0 0 10px ${crate.color}; transition: all 0.3s; border:none; border-radius:4px; padding: 6px 12px;`;
 
         const bmItem = document.createElement('div');
         bmItem.className = 'shop-item';
-        bmItem.style.cssText = `border: 2px dashed ${crate.color}; box-shadow: 0 0 15px ${crate.color}22; background: linear-gradient(45deg, #1a050f, #0d1117);`;
+        bmItem.style.cssText = `border: 1px dashed ${crate.color}; box-shadow: 0 0 15px ${crate.color}22; background: linear-gradient(45deg, #161b22, #0d1117); display:flex; align-items:center; padding:10px; margin-bottom:10px; border-radius:8px; gap:10px;`;
         
         bmItem.innerHTML = `
-            <div class="shop-item-img-container" style="border-color:${crate.color}; background:#000; display:flex; justify-content:center; align-items:center;">
-                <img src="source/icon/sub/crate.png" style="width:30px; height:30px; object-fit:contain; filter:drop-shadow(0 0 8px ${crate.color}); animation: pulse 1.5s infinite;">
+            <div class="shop-item-img-container" style="border:1px solid ${crate.color}; background:#000; border-radius:6px; padding:5px; flex-shrink:0;">
+                <img src="source/icon/sub/crate.png" style="width:35px; height:35px; object-fit:contain; filter:drop-shadow(0 0 5px ${crate.color}); animation: pulse 1.5s infinite;">
             </div>
-            <div class="shop-item-info">
-                <div class="shop-item-title" style="color:${crate.color}; text-shadow: 0 0 5px ${crate.color}66;">${crate.name}</div>
-                <div class="shop-item-desc" style="color:#e6edf3;">${crate.desc}</div>
-                <div style="color:#8b949e; font-size:9px; margin-top:2px;">Drops: Material Bundle or Equipment</div>
+            <div class="shop-item-info" style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+                <div class="shop-item-title" style="color:${crate.color}; font-weight:bold; font-size:13px; text-shadow: 0 0 5px ${crate.color}66; margin-bottom:2px;">${crate.name}</div>
+                <div class="shop-item-desc" style="color:#e6edf3; font-size:10px; line-height:1.2; opacity:0.8;">${crate.desc}</div>
+                <div style="color:#8b949e; font-size:9px; margin-top:4px; text-transform:uppercase;">Drops: Materials or Gear</div>
             </div>
-            <div class="shop-item-action">
-                <div class="shop-item-price" style="color:var(--gold);">${crate.cost} SOL</div>
-                <div class="shop-item-controls">
-                    <button class="btn-buy-item btn-gacha-roll" data-crate="${crate.id}" data-cost="${crate.cost}" style="${btnStyle}">BUY</button>
-                </div>
+            <div class="shop-item-action" style="display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0;">
+                <div class="shop-item-price" style="color:#0098EA; font-weight:900; font-size:12px;">${crate.cost} TON</div>
+                <button class="btn-gacha-roll" data-crate="${crate.id}" data-cost="${crate.cost}" style="${btnStyle}; cursor:pointer;">BUY</button>
             </div>
         `;
         document.getElementById('shop-cat-bm').appendChild(bmItem);
@@ -176,10 +175,13 @@ export const initShop = () => {
         });
     }, 50);
 
+    // === RENDER TOKO NORMAL ===
     Object.keys(SHOP_ITEMS).forEach(key => {
         const item = SHOP_ITEMS[key];
         let isStamina = (key === 'STAMINA_REFILL');
-        let isSOL = item.isSOL;
+        
+        // [CLEANUP] Hanya mengecek TON
+        let isCrypto = item.isTON === true;
         
         let displayPrice = item.price;
         let isStaminaFull = false;
@@ -193,36 +195,36 @@ export const initShop = () => {
         }
 
         let canAfford = false;
-        if (isSOL) canAfford = true; 
+        if (isCrypto) canAfford = true; 
         else canAfford = state.profile.gold >= displayPrice;
 
-        const isMaterial = (key === 'IRON_ORE' || key === 'DARK_ENERGY' || isSOL);
+        const isMaterial = (key === 'IRON_ORE' || key === 'DARK_ENERGY' || isCrypto);
 
         const itemEl = document.createElement('div');
         itemEl.className = 'shop-item';
         
-        let currencyLabel = isSOL ? 'SOL' : 'G';
+        let currencyLabel = isCrypto ? 'TON' : 'G';
 
-        if (isSOL) {
-            itemEl.style.cssText = 'border: 2px solid var(--gold); box-shadow: 0 0 15px rgba(255,202,40,0.3);';
+        if (isCrypto) {
+            itemEl.style.cssText = 'border: 1px solid #0098EA; box-shadow: 0 0 15px rgba(0, 152, 234, 0.1); background:#0d1117;';
         }
 
         let qtyHTML = '';
-        if (!isStamina && !isSOL) {
+        if (!isStamina && !isCrypto) {
             qtyHTML = `
-                <div class="qty-wrapper">
-                    <button class="btn-qty minus" data-key="${key}">-</button>
-                    <input type="number" id="qty-${key}" value="1" min="1" ${isMaterial ? '' : 'max="99"'} class="shop-qty-input">
-                    <button class="btn-qty plus" data-key="${key}">+</button>
+                <div class="qty-wrapper" style="display:flex; align-items:center; gap:4px; margin-bottom:4px;">
+                    <button class="btn-qty minus" data-key="${key}" style="background:#30363d; border:none; color:#fff; width:20px; height:20px; border-radius:4px; cursor:pointer;">-</button>
+                    <input type="number" id="qty-${key}" value="1" min="1" ${isMaterial ? '' : 'max="99"'} class="shop-qty-input" style="width:30px; text-align:center; background:#161b22; color:#fff; border:1px solid #30363d; border-radius:4px; font-size:10px; height:20px; outline:none;">
+                    <button class="btn-qty plus" data-key="${key}" style="background:#30363d; border:none; color:#fff; width:20px; height:20px; border-radius:4px; cursor:pointer;">+</button>
                 </div>
             `;
         }
         
         let subtext = '';
-        if (isStamina) subtext = `<div style="color:var(--emerald); font-size:9px; margin-top:2px;">Cost: 200 G / Point</div>`;
-        if (isSOL) subtext = `<div style="color:var(--gold); font-size:9px; margin-top:2px;">Payment via Solana Network</div>`;
+        if (isStamina) subtext = `<div style="color:var(--emerald); font-size:9px; margin-top:4px;">Cost: 200 G / Point</div>`;
+        if (isCrypto) subtext = `<div style="color:#0098EA; font-size:9px; margin-top:4px; display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:4px; height:4px; background:#0098EA; border-radius:50%; box-shadow:0 0 5px #0098EA;"></span> Secure TON Transfer</div>`;
 
-        let priceText = isStaminaFull ? 'FULL' : (isSOL ? displayPrice.toFixed(2) : displayPrice.toLocaleString()) + ' ' + currencyLabel;
+        let priceText = isStaminaFull ? 'FULL' : (isCrypto ? displayPrice.toFixed(2) : displayPrice.toLocaleString()) + ' ' + currencyLabel;
 
         let btnText = isStaminaFull ? 'MAXED' : 'BUY';
         let btnBg = '';
@@ -237,38 +239,38 @@ export const initShop = () => {
             cursorStyle = 'not-allowed';
             if (!isStaminaFull) btnText = 'BUY'; 
         } else {
-            if (isSOL) {
-                btnBg = 'var(--gold)';
-                btnColor = '#000';
-                btnShadow = '0 0 15px rgba(255,202,40,0.4)';
+            if (isCrypto) {
+                btnBg = '#0098EA';
+                btnColor = '#fff';
+                btnShadow = '0 0 10px rgba(0, 152, 234, 0.4)';
             } else {
                 btnBg = 'var(--emerald)';
                 btnColor = '#000';
-                btnShadow = '0 0 15px rgba(46, 204, 113, 0.4)';
+                btnShadow = '0 0 10px rgba(46, 204, 113, 0.4)';
             }
         }
 
         itemEl.innerHTML = `
-            <div class="shop-item-img-container" ${isSOL ? 'style="border-color:var(--gold);"' : ''}>
-                <img src="${item.image}" alt="${item.name}" class="shop-item-img">
+            <div class="shop-item-img-container" style="background:#0d1117; border:1px solid ${isCrypto ? '#0098EA' : '#30363d'}; border-radius:6px; padding:5px;">
+                <img src="${item.image}" alt="${item.name}" class="shop-item-img" style="width:35px; height:35px; object-fit:contain;">
             </div>
             
-            <div class="shop-item-info">
-                <div class="shop-item-title" ${isSOL ? 'style="color:var(--gold);"' : ''}>${item.name}</div>
-                <div class="shop-item-desc">${item.description}</div>
+            <div class="shop-item-info" style="flex:1;">
+                <div class="shop-item-title" style="color:${isCrypto ? '#0098EA' : '#e6edf3'}; font-weight:bold; font-size:12px; margin-bottom:2px;">${item.name}</div>
+                <div class="shop-item-desc" style="color:#8b949e; font-size:10px; line-height:1.2;">${item.description}</div>
                 ${subtext}
             </div>
             
-            <div class="shop-item-action">
-                <div class="shop-item-price" id="price-${key}">${priceText}</div>
-                <div class="shop-item-controls">
+            <div class="shop-item-action" style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+                <div class="shop-item-price" id="price-${key}" style="color:${isCrypto ? '#0098EA' : 'var(--gold)'}; font-weight:900; font-size:11px;">${priceText}</div>
+                <div class="shop-item-controls" style="display:flex; flex-direction:column; align-items:flex-end;">
                     ${qtyHTML}
-                    <button class="btn-buy-item btn-buy" data-item="${key}" data-price="${displayPrice}" ${(!canAfford || isStaminaFull) ? 'disabled' : ''} style="background:${btnBg}; color:${btnColor}; box-shadow:${btnShadow}; cursor:${cursorStyle}; transition:all 0.3s; font-weight:900;">${btnText}</button>
+                    <button class="btn-buy-item btn-buy" data-item="${key}" data-price="${displayPrice}" ${(!canAfford || isStaminaFull) ? 'disabled' : ''} style="background:${btnBg}; color:${btnColor}; border:none; border-radius:4px; padding:6px 16px; box-shadow:${btnShadow}; cursor:${cursorStyle}; transition:all 0.2s; font-weight:bold; font-size:10px; width:100%;">${btnText}</button>
                 </div>
             </div>
         `;
         
-        if (isSOL) document.getElementById('shop-cat-gold').appendChild(itemEl);
+        if (isCrypto) document.getElementById('shop-cat-gold').appendChild(itemEl);
         else if (key === 'STAMINA_REFILL' || key === 'IRON_ORE' || key === 'DARK_ENERGY') document.getElementById('shop-cat-item').appendChild(itemEl);
         else document.getElementById('shop-cat-equip').appendChild(itemEl);
     });
@@ -278,13 +280,14 @@ export const initShop = () => {
             const itemKey = e.target.id.replace('qty-', '');
             const priceEl = document.getElementById(`price-${itemKey}`);
             const item = SHOP_ITEMS[itemKey];
-            const isMaterial = (itemKey === 'IRON_ORE' || itemKey === 'DARK_ENERGY' || item.isSOL);
-            let currency = item.isSOL ? 'SOL' : 'G';
+            const isCrypto = item.isTON === true;
+            const isMaterial = (itemKey === 'IRON_ORE' || itemKey === 'DARK_ENERGY' || isCrypto);
+            let currency = isCrypto ? 'TON' : 'G';
             
             let currentVal = parseInt(e.target.value);
             if (!isMaterial && currentVal > 99) { e.target.value = 99; currentVal = 99; showToast("LIMIT: 99 ITEMS", "#ff4444"); }
             const calcVal = (isNaN(currentVal) || currentVal < 1) ? 1 : currentVal;
-            if (priceEl) priceEl.innerText = (item.isSOL ? (item.price * calcVal).toFixed(2) : (item.price * calcVal).toLocaleString()) + ' ' + currency;
+            if (priceEl) priceEl.innerText = (isCrypto ? (item.price * calcVal).toFixed(2) : (item.price * calcVal).toLocaleString()) + ' ' + currency;
         };
         inputEl.onchange = (e) => { let currentVal = parseInt(e.target.value); if (isNaN(currentVal) || currentVal < 1) e.target.value = 1; };
     });
@@ -296,8 +299,9 @@ export const initShop = () => {
             const inputEl = document.getElementById(`qty-${itemKey}`);
             const priceEl = document.getElementById(`price-${itemKey}`);
             const item = SHOP_ITEMS[itemKey];
-            const isMaterial = (itemKey === 'IRON_ORE' || itemKey === 'DARK_ENERGY' || item.isSOL);
-            let currency = item.isSOL ? 'SOL' : 'G';
+            const isCrypto = item.isTON === true;
+            const isMaterial = (itemKey === 'IRON_ORE' || itemKey === 'DARK_ENERGY' || isCrypto);
+            let currency = isCrypto ? 'TON' : 'G';
             
             if (!inputEl) return;
             let currentVal = parseInt(inputEl.value) || 1;
@@ -309,10 +313,11 @@ export const initShop = () => {
             }
             
             inputEl.value = currentVal;
-            if (priceEl) priceEl.innerText = (item.isSOL ? (item.price * currentVal).toFixed(2) : (item.price * currentVal).toLocaleString()) + ' ' + currency;
+            if (priceEl) priceEl.innerText = (isCrypto ? (item.price * currentVal).toFixed(2) : (item.price * currentVal).toLocaleString()) + ' ' + currency;
         };
     });
 
+    // EVENT LISTENER PEMBELIAN
     document.querySelectorAll('.btn-buy').forEach(btn => {
         btn.onclick = () => {
             if (isProcessingShop) return; 
@@ -323,30 +328,31 @@ export const initShop = () => {
             const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
             const itemData = SHOP_ITEMS[itemKey];
             
-            let currency = itemData.isSOL ? 'SOL' : 'G';
+            // [CLEANUP] Hanya mengecek TON
+            const isCrypto = itemData.isTON === true;
+            let currency = isCrypto ? 'TON' : 'G';
             
             let totalCost;
             if (itemKey === 'STAMINA_REFILL') totalCost = parseInt(btn.getAttribute('data-price')) || 0;
-            else if (itemData.isSOL) totalCost = itemData.price;
+            else if (isCrypto) totalCost = itemData.price;
             else totalCost = itemData.price * qty;
 
-            if (itemData.isSOL) {
+            if (isCrypto) {
                 const goldAmount = itemData.reward; 
                 if (!goldAmount) {
-                    showShopPopup("SYSTEM ERROR", "Reward data is missing in server configuration. Transaction aborted.");
+                    showToast("SYSTEM ERROR: REWARD DATA MISSING", "#ff4444");
                     return;
                 }
 
-                // [FIX DEVNET]: Teks dihapus, sekarang murni Mainnet!
                 showShopPopup(
                     "WEB3 SMART CONTRACT", 
-                    `Initiate secure blockchain transfer for <br><strong class="text-emerald">${itemData.name}</strong><br>Cost: <strong class="text-gold">${totalCost} SOL</strong>? <br><br><span style="font-size:10px; color:#8b949e;">Requires Wallet Signature.</span>`, 
+                    `Initiate secure blockchain transfer for <br><strong class="text-emerald" style="font-size:14px;">${itemData.name}</strong><br>Cost: <strong style="color:#0098EA; font-size:16px;">${totalCost} TON</strong>? <br><br><span style="font-size:10px; color:#8b949e; border-top:1px solid #30363d; padding-top:8px; display:block;">Requires Wallet Signature via Telegram/Tonkeeper.</span>`, 
                     true, 
                     async () => {
                         isProcessingShop = true;
                         const exist = document.getElementById('shop-popup'); if(exist) exist.remove();
                         
-                        const tx = await payWithSOL(totalCost);
+                        const tx = await payWithTON(totalCost);
                         
                         if (tx && tx.success) {
                             const state = getState();
@@ -356,14 +362,16 @@ export const initShop = () => {
                             refreshShopUI(); 
                         }
                         isProcessingShop = false;
-                    }
+                    },
+                    '#0098EA' // Memberi warna biru TON pada Pop-Up
                 );
                 return; 
             }
 
+            // Pembelian Biasa
             showShopPopup(
                 "CONFIRM PURCHASE", 
-                `Purchase <strong class="text-emerald">${qty}x ${itemData.name}</strong> for <strong class="text-gold">${totalCost.toLocaleString()} ${currency}</strong>?`, 
+                `Purchase <strong class="text-emerald">${qty}x ${itemData.name}</strong> for <strong style="color:var(--gold);">${totalCost.toLocaleString()} ${currency}</strong>?`, 
                 true, 
                 async () => {
                     isProcessingShop = true;
@@ -382,11 +390,10 @@ export const initShop = () => {
                     
                     if (result.success) {
                         if(typeof playSFX === 'function') playSFX('sell');
-                        
                         btn.innerText = 'DONE';
                         btn.style.background = '#2ecc71';
+                        btn.style.color = '#000';
                         setTimeout(() => { refreshShopUI(); }, 500);
-
                         showToast(result.message, 'var(--emerald)'); 
                     } else {
                         if(typeof playSFX === 'function') playSFX('craftFail');
@@ -398,6 +405,9 @@ export const initShop = () => {
     });
 };
 
+// ===============================================
+// LOGIKA MESIN GACHA (TON) - ANTI-WHALE BALANCED
+// ===============================================
 const handleGachaRoll = (crateId, cost) => {
     const state = getState();
 
@@ -410,16 +420,15 @@ const handleGachaRoll = (crateId, cost) => {
     const crateNames = ["BASIC CRATE", "ADVANCED CRATE", "ELITE CRATE", "SUPREME CRATE"];
     const crateName = crateNames[crateId - 1];
 
-    // [FIX DEVNET]: Teks dihapus, sekarang murni Mainnet!
     showShopPopup(
         `CONFIRM GACHA (WEB3)`, 
-        `Are you sure you want to buy <strong>${crateName}</strong> for <strong style="color:var(--gold);">${cost} SOL</strong>?<br><br><span style="font-size:10px; color:#ff4444;">WARNING: Requires Wallet Signature. Items are random.</span>`, 
+        `Buy <strong>${crateName}</strong> for <strong style="color:#0098EA;">${cost} TON</strong>?<br><br><span style="font-size:10px; color:#ff4444;">WARNING: Requires Wallet Signature. Items are random.</span>`, 
         true, 
         async () => {
             const exist = document.getElementById('shop-popup'); if(exist) exist.remove();
             isProcessingShop = true;
 
-            const tx = await payWithSOL(cost);
+            const tx = await payWithTON(cost);
 
             if (tx && tx.success) {
                 showUnboxingAnimation(async () => {
@@ -429,33 +438,33 @@ const handleGachaRoll = (crateId, cost) => {
                     let rarity = 'COMMON'; let color = '#6e7681'; let rMult = 1;
                     
                     if (crateId === 1) { 
-                        if(roll >= 99.9) { rarity='LEGENDARY'; color='#ffca28'; rMult=10; }
-                        else if(roll >= 99.5) { rarity='MYTHIC'; color='#ff0055'; rMult=6; }
-                        else if(roll >= 97.0) { rarity='EPIC'; color='#9b59b6'; rMult=3; }
-                        else if(roll >= 88.0) { rarity='RARE'; color='#3498db'; rMult=2; }
-                        else if(roll >= 60.0) { rarity='UNCOMMON'; color='#2ecc71'; rMult=1.5; }
+                        // BASIC CRATE: Max Epic (0.5%), Dominan Common (60%)
+                        if(roll > 99.5) { rarity='EPIC'; color='#9b59b6'; rMult=3; }
+                        else if(roll > 90.0) { rarity='RARE'; color='#3498db'; rMult=2; }
+                        else if(roll > 60.0) { rarity='UNCOMMON'; color='#2ecc71'; rMult=1.5; }
+                        else { rarity='COMMON'; color='#6e7681'; rMult=1; }
                     } else if (crateId === 2) { 
-                        if(roll >= 99.5) { rarity='LEGENDARY'; color='#ffca28'; rMult=10; }
-                        else if(roll >= 97.0) { rarity='MYTHIC'; color='#ff0055'; rMult=6; }
-                        else if(roll >= 90.0) { rarity='EPIC'; color='#9b59b6'; rMult=3; }
-                        else if(roll >= 75.0) { rarity='RARE'; color='#3498db'; rMult=2; }
-                        else if(roll >= 40.0) { rarity='UNCOMMON'; color='#2ecc71'; rMult=1.5; }
+                        // ADVANCED CRATE: Max Mythic (0.5%), Dominan Uncommon (50%)
+                        if(roll > 99.5) { rarity='MYTHIC'; color='#ff0055'; rMult=6; }
+                        else if(roll > 90.0) { rarity='EPIC'; color='#9b59b6'; rMult=3; }
+                        else if(roll > 50.0) { rarity='RARE'; color='#3498db'; rMult=2; }
+                        else { rarity='UNCOMMON'; color='#2ecc71'; rMult=1.5; }
                     } else if (crateId === 3) { 
-                        if(roll >= 98.0) { rarity='LEGENDARY'; color='#ffca28'; rMult=10; }
-                        else if(roll >= 92.0) { rarity='MYTHIC'; color='#ff0055'; rMult=6; }
-                        else if(roll >= 75.0) { rarity='EPIC'; color='#9b59b6'; rMult=3; }
-                        else if(roll >= 45.0) { rarity='RARE'; color='#3498db'; rMult=2; }
-                        else if(roll >= 15.0) { rarity='UNCOMMON'; color='#2ecc71'; rMult=1.5; }
+                        // ELITE CRATE: Legendary super langka (0.025%), Dominan Rare (60%)
+                        if(roll > 99.975) { rarity='LEGENDARY'; color='#ffca28'; rMult=10; }
+                        else if(roll > 95.0) { rarity='MYTHIC'; color='#ff0055'; rMult=6; }
+                        else if(roll > 60.0) { rarity='EPIC'; color='#9b59b6'; rMult=3; }
+                        else { rarity='RARE'; color='#3498db'; rMult=2; }
                     } else if (crateId === 4) { 
-                        if(roll >= 90.0) { rarity='LEGENDARY'; color='#ffca28'; rMult=10; } 
-                        else if(roll >= 70.0) { rarity='MYTHIC'; color='#ff0055'; rMult=6; } 
-                        else if(roll >= 40.0) { rarity='EPIC'; color='#9b59b6'; rMult=3; } 
-                        else if(roll >= 10.0) { rarity='RARE'; color='#3498db'; rMult=2; } 
-                        else { rarity='UNCOMMON'; color='#2ecc71'; rMult=1.5; } 
+                        // SUPREME CRATE: Legendary (0.5%), Dominan Epic (80%)
+                        if(roll > 99.5) { rarity='LEGENDARY'; color='#ffca28'; rMult=10; } 
+                        else if(roll > 80.0) { rarity='MYTHIC'; color='#ff0055'; rMult=6; } 
+                        else { rarity='EPIC'; color='#9b59b6'; rMult=3; } 
                     }
 
+                    // [CLEANUP] Hanya mengecek isTON
                     const validKeys = Object.keys(SHOP_ITEMS).filter(k => 
-                        k !== 'STAMINA_REFILL' && !SHOP_ITEMS[k].isSOL
+                        k !== 'STAMINA_REFILL' && !SHOP_ITEMS[k].isTON
                     );
                     
                     const randomKey = validKeys.length > 0 ? validKeys[Math.floor(Math.random() * validKeys.length)] : null;
@@ -533,7 +542,7 @@ const handleGachaRoll = (crateId, cost) => {
                         updateState({ profile: upProfile, inventory: newInv });
 
                         popupMsg = `Equipment added to Bag.`;
-                        for (let k in newItem.stats) finalStatsText += `${k.toUpperCase()}: +${newItem.stats[k]} `;
+                        for (let k in newItem.stats) finalStatsText += `<div style="display:inline-block; background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px; margin:2px;">${k.toUpperCase()}: +${newItem.stats[k]}</div>`;
                     }
 
                     if(typeof playSFX === 'function') {
@@ -544,17 +553,18 @@ const handleGachaRoll = (crateId, cost) => {
                     const exist2 = document.getElementById('shop-popup'); if(exist2) exist2.remove();
                     const overlay = document.createElement('div'); overlay.id = 'shop-popup'; overlay.className = 'modal-overlay z-alert';
                     overlay.innerHTML = `
-                        <div class="modal-box" style="border-color: ${color}; box-shadow: 0 0 30px ${color}66; background:#0d1117; text-align:center;">
-                            <h3 style="color:${color}; text-shadow: 0 0 10px ${color}; margin-bottom:5px;">${rarity} DROP!</h3>
-                            <div style="color:#8b949e; font-size:10px; margin-bottom:15px;">${popupMsg}</div>
+                        <div class="modal-box" style="border-color: ${color}; box-shadow: 0 0 40px ${color}66; background:linear-gradient(180deg, #161b22, #0d1117); text-align:center;">
+                            <h3 style="color:${color}; text-shadow: 0 0 15px ${color}; margin-bottom:5px; font-size:22px; letter-spacing:2px;">${rarity} DROP!</h3>
+                            <div style="color:#8b949e; font-size:10px; margin-bottom:15px; text-transform:uppercase;">${popupMsg}</div>
                             
-                            <div style="padding:15px; background:rgba(0,0,0,0.5); border:1px solid ${color}; border-radius:8px; margin-bottom:20px;">
-                                <img src="${baseItem.image}" style="width:50px; height:50px; object-fit:contain; filter:drop-shadow(0 0 15px ${color}); margin-bottom:10px; animation: floatUpAnim 2s infinite ease-in-out alternate;">
-                                <div style="color:#fff; font-weight:900; font-size:14px; margin-bottom:5px;">${displayItemName}</div>
-                                <div style="color:${color}; font-weight:bold; font-size:12px;">${finalStatsText}</div>
+                            <div style="padding:20px; background:rgba(0,0,0,0.6); border:1px solid ${color}; border-radius:8px; margin-bottom:20px; position:relative; overflow:hidden;">
+                                <div style="position:absolute; top:-50px; left:50%; transform:translateX(-50%); width:100px; height:100px; background:${color}; filter:blur(40px); opacity:0.2; pointer-events:none;"></div>
+                                <img src="${baseItem.image}" style="width:60px; height:60px; object-fit:contain; filter:drop-shadow(0 0 20px ${color}); margin-bottom:15px; animation: floatUpAnim 2s infinite ease-in-out alternate;">
+                                <div style="color:#fff; font-weight:900; font-size:15px; margin-bottom:10px; text-shadow:0 0 5px #fff;">${displayItemName}</div>
+                                <div style="color:${color}; font-weight:bold; font-size:11px; display:flex; flex-wrap:wrap; justify-content:center;">${finalStatsText}</div>
                             </div>
                             
-                            <button id="btn-gacha-ok" class="btn-action" style="background:${color}; color:#000; width:100%; font-weight:bold;">CONTINUE</button>
+                            <button id="btn-gacha-ok" class="btn-action" style="background:${color}; color:#000; width:100%; font-weight:900; box-shadow:0 0 15px ${color}; border:none;">COLLECT ITEM</button>
                         </div>`;
                     document.body.appendChild(overlay);
                     document.getElementById('btn-gacha-ok').onclick = () => { overlay.remove(); refreshShopUI(); }; 
@@ -562,10 +572,14 @@ const handleGachaRoll = (crateId, cost) => {
             }
             
             isProcessingShop = false;
-        }
+        },
+        '#0098EA'
     );
 };
 
+// ===============================================
+// [EFEK VISUAL] ANIMASI GACHA
+// ===============================================
 const showUnboxingAnimation = (onComplete) => {
     const exist = document.getElementById('shop-popup'); if(exist) exist.remove();
     const overlay = document.createElement('div'); overlay.id = 'shop-popup'; overlay.className = 'modal-overlay z-alert';
@@ -574,16 +588,16 @@ const showUnboxingAnimation = (onComplete) => {
     
     overlay.innerHTML = `
         <div id="${flashId}" style="position:absolute; top:0; left:0; width:100%; height:100%; background:#fff; opacity:0; z-index:9999; pointer-events:none; transition: opacity 0.2s ease-out;"></div>
-        <div class="modal-box" style="border-color: #ff0055; background:#000; text-align:center; overflow:hidden; position:relative; box-shadow: 0 0 40px rgba(255,0,85,0.4);">
+        <div class="modal-box" style="border-color: #ff0055; background:#000; text-align:center; overflow:hidden; position:relative; box-shadow: 0 0 50px rgba(255,0,85,0.5);">
             
-            <div style="position:absolute; top:-50%; left:-50%; width:200%; height:200%; background:conic-gradient(from 0deg, transparent 0deg, rgba(255,0,85,0.2) 90deg, transparent 180deg); animation: spinRadar 2s linear infinite; pointer-events:none; z-index:1;"></div>
+            <div style="position:absolute; top:-50%; left:-50%; width:200%; height:200%; background:conic-gradient(from 0deg, transparent 0deg, rgba(255,0,85,0.3) 90deg, transparent 180deg); animation: spinRadar 1.5s linear infinite; pointer-events:none; z-index:1;"></div>
             
-            <h3 id="decrypt-text" style="color:#ff0055; position:relative; z-index:2; text-shadow: 0 0 10px #ff0055; letter-spacing:3px; margin-bottom:15px;">DECRYPTING...</h3>
+            <h3 id="decrypt-text" style="color:#ff0055; position:relative; z-index:2; text-shadow: 0 0 15px #ff0055; letter-spacing:4px; margin-bottom:15px; font-size:18px;">DECRYPTING...</h3>
             
-            <img id="crate-img" src="source/icon/sub/crate.png" style="width:70px; height:70px; object-fit:contain; margin: 15px 0 25px 0; filter:drop-shadow(0 0 15px #ff0055); position:relative; z-index:2; transition: transform 0.1s;">
+            <img id="crate-img" src="source/icon/sub/crate.png" style="width:80px; height:80px; object-fit:contain; margin: 15px 0 25px 0; filter:drop-shadow(0 0 25px #ff0055); position:relative; z-index:2; transition: transform 0.1s;">
             
-            <div style="width:100%; background:#161b22; height:10px; border-radius:5px; overflow:hidden; border:1px solid #ff0055; position:relative; z-index:2; box-shadow: inset 0 0 10px #000;">
-                <div id="unboxing-bar" style="height:100%; width:0%; background:linear-gradient(90deg, #ff0055, #ffca28); box-shadow:0 0 15px #ff0055; transition: width 0.1s linear;"></div>
+            <div style="width:100%; background:#161b22; height:12px; border-radius:6px; overflow:hidden; border:1px solid #ff0055; position:relative; z-index:2; box-shadow: inset 0 0 10px #000;">
+                <div id="unboxing-bar" style="height:100%; width:0%; background:linear-gradient(90deg, #ff0055, #ffca28, #fff); box-shadow:0 0 15px #ff0055; transition: width 0.1s linear;"></div>
             </div>
         </div>
         <style>
@@ -600,58 +614,69 @@ const showUnboxingAnimation = (onComplete) => {
     
     let progress = 0;
     const interval = setInterval(() => {
-        progress += Math.random() * 12 + 4; 
+        progress += Math.random() * 15 + 5; 
         if (progress > 100) progress = 100;
         bar.style.width = `${progress}%`;
         
-        crate.style.transform = `translate(${Math.random()*6-3}px, ${Math.random()*6-3}px) scale(${1 + progress/300})`;
+        crate.style.transform = `translate(${Math.random()*8-4}px, ${Math.random()*8-4}px) scale(${1 + progress/200})`;
         
-        if(Math.random() > 0.6) decryptText.innerText = Math.random().toString(36).substring(2, 10).toUpperCase();
+        if(Math.random() > 0.5) decryptText.innerText = Math.random().toString(36).substring(2, 10).toUpperCase();
         else decryptText.innerText = "DECRYPTING...";
 
         if (progress === 100) {
             clearInterval(interval);
             decryptText.innerText = "ACCESS GRANTED!";
             decryptText.style.color = "#2ecc71";
-            crate.style.transform = "scale(1.2)";
+            crate.style.transform = "scale(1.3)";
             
             const flash = document.getElementById(flashId);
             if(flash) {
                 flash.style.opacity = '1';
-                setTimeout(() => flash.style.opacity = '0', 150);
+                setTimeout(() => flash.style.opacity = '0', 200);
             }
             
             setTimeout(() => {
                 overlay.remove();
                 onComplete();
-            }, 400);
+            }, 500);
         }
-    }, 80);
+    }, 70);
 };
 
-const showShopPopup = (title, message, isConfirm = false, onYes = null) => {
+// [UPDATE]: Menambah parameter warna agar popup Web3 terlihat beda
+const showShopPopup = (title, message, isConfirm = false, onYes = null, customColor = 'var(--emerald)') => {
     const exist = document.getElementById('shop-popup'); if(exist) exist.remove();
     const overlay = document.createElement('div'); overlay.id = 'shop-popup'; overlay.className = 'modal-overlay z-alert';
     let btns = '';
     
     if (isConfirm) {
-        btns = `<div class="flex-row mt-20"><button id="btn-shop-no" class="btn-half red-outline flex-1">CANCEL</button><button id="btn-shop-yes" class="btn-action green flex-1 mb-0 text-black">CONFIRM</button></div>`;
+        btns = `<div class="flex-row mt-20" style="gap:10px; display:flex;">
+            <button id="btn-shop-no" class="btn-half" style="flex:1; border:1px solid #ff4444; color:#ff4444; background:transparent; padding:12px; border-radius:6px; cursor:pointer; font-weight:bold;">CANCEL</button>
+            <button id="btn-shop-yes" class="btn-action" style="flex:1; background:${customColor}; color:#000; border:none; padding:12px; border-radius:6px; cursor:pointer; font-weight:900; box-shadow:0 0 15px ${customColor}66;">CONFIRM</button>
+        </div>`;
     } else if (onYes !== false) {
-        btns = `<button id="btn-shop-ok" class="btn-action green mt-20 text-black">UNDERSTOOD</button>`;
+        btns = `<button id="btn-shop-ok" class="btn-action mt-20" style="width:100%; background:${customColor}; color:#000; font-weight:900; padding:12px; border-radius:6px;">UNDERSTOOD</button>`;
     }
     
-    let iconHTML = `<img src="source/icon/warning.png" class="modal-icon">`;
-    if (isConfirm || onYes === false) iconHTML = ''; 
-    else if (title === "TRANSACTION SUCCESSFUL") iconHTML = `<img src="source/icon/sub/crate.png" class="modal-icon">`; 
+    let iconHTML = `<img src="source/icon/warning.png" class="modal-icon" style="filter:drop-shadow(0 0 5px ${customColor});">`;
+    if (title.includes("SUCCESSFUL") || title.includes("DROP")) iconHTML = `<img src="source/icon/sub/crate.png" class="modal-icon" style="filter:drop-shadow(0 0 5px ${customColor});">`; 
+    if (title.includes("WEB3")) iconHTML = `<img src="source/item/gold.png" class="modal-icon" style="filter:drop-shadow(0 0 10px #0098EA); animation: pulse 2s infinite;">`;
 
-    overlay.innerHTML = `<div class="modal-box shop-box">${iconHTML}<h3 class="text-warning-shop">${title}</h3><p class="modal-text" style="margin-bottom:0;">${message}</p>${btns}</div>`;
+    overlay.innerHTML = `
+        <div class="modal-box shop-box" style="border-color:${customColor}; box-shadow:0 0 30px ${customColor}44; text-align:center;">
+            ${iconHTML}
+            <h3 style="color:${customColor}; margin-bottom:15px; font-size:18px; letter-spacing:1px; text-shadow:0 0 10px ${customColor}88;">${title}</h3>
+            <p class="modal-text" style="color:#e6edf3; font-size:12px; line-height:1.6; margin-bottom:0;">${message}</p>
+            ${btns}
+        </div>`;
+    
     document.body.appendChild(overlay);
 
     if(isConfirm){
         document.getElementById('btn-shop-no').onclick = () => { if(typeof playSFX === 'function') playSFX('click'); overlay.remove(); isProcessingShop = false; };
         document.getElementById('btn-shop-yes').onclick = async function() { 
             if(typeof playSFX === 'function') playSFX('click');
-            this.disabled = true; this.innerText = "PROCESSING..."; this.style.background = "#6e7681"; this.style.color = "#fff";
+            this.disabled = true; this.innerText = "PROCESSING..."; this.style.background = "#30363d"; this.style.color = "#8b949e"; this.style.boxShadow = "none";
             document.getElementById('btn-shop-no').style.display = 'none';
             
             if(onYes) await onYes(); 
