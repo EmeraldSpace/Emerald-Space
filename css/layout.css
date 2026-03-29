@@ -4,7 +4,8 @@
 .screen-container {
     width: 100%; max-width: 500px; margin: 0 auto;
     /* Disesuaikan: 70px mengikuti tinggi Top Bar yang baru */
-    min-height: 100vh; padding: calc(70px + 15px) 20px calc(75px + 25px) 20px;
+    min-height: 100dvh; /* [UPDATE] Menggunakan dvh agar ramah mobile browser/TMA */
+    padding: calc(70px + 15px) 20px calc(75px + 25px) 20px;
     position: relative; overflow-x: hidden;
 }
 
@@ -159,4 +160,14 @@
 
 #nav-toggle.collapsed {
     bottom: 0 !important; /* TURUN KE BAWAH SAAT NAVBAR HILANG */
+}
+
+/* =========================================
+   OVERRIDE TON CONNECT POP-UP (Z-INDEX FIX)
+   ========================================= */
+#tc-widget-root, 
+tc-root,
+.tc-root {
+    position: relative !important;
+    z-index: 99999999 !important; /* Paksa maju ke layer paling depan */
 }
