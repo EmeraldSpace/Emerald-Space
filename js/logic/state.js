@@ -1,5 +1,5 @@
 /* =========================================
-   GLOBAL STATE MANAGEMENT - TON NETWORK SYNC (V5.2)
+   GLOBAL STATE MANAGEMENT - SOLANA NETWORK SYNC (V5.3)
    ========================================= */
 
 export const SHIPS = {
@@ -52,9 +52,9 @@ export const loadStateFromServer = async (walletAddress) => {
                 ...currentState.profile,
                 id: profile.id,
                 username: profile.username,
-                walletAddress: profile.ton_wallet || profile.wallet_address, 
-                telegram_id: profile.telegram_id || null, // Memuat Telegram ID
-                referred_by: profile.referred_by || null, // Memuat ID Pengundang
+                walletAddress: profile.solana_wallet || profile.wallet_address, 
+                telegram_id: profile.telegram_id || null, 
+                referred_by: profile.referred_by || null, 
                 level: profile.level ?? 1,
                 xp: profile.xp ?? 0,
                 maxXp: profile.max_xp ?? 100,
@@ -119,9 +119,9 @@ const syncProfile = async (p) => {
     try {
         const payload = {
             wallet_address: currentUserAddress, 
-            ton_wallet: p.walletAddress || currentState.profile.walletAddress || null, 
-            telegram_id: p.telegram_id || currentState.profile.telegram_id || null, // Push Telegram ID
-            referred_by: p.referred_by || currentState.profile.referred_by || null, // Push Referrer ID
+            solana_wallet: p.walletAddress || currentState.profile.walletAddress || null, 
+            telegram_id: p.telegram_id || currentState.profile.telegram_id || null, 
+            referred_by: p.referred_by || currentState.profile.referred_by || null, 
             username: username,
             ship_class: p.shipClass || currentState.profile.shipClass,
             level: p.level ?? currentState.profile.level,
@@ -221,13 +221,13 @@ export const getTopPlayers = async () => {
     }
 };
 
-export const checkAndRecoverWallet = async (tonAddress) => {
-    if (!supabase || !tonAddress) return false;
+export const checkAndRecoverWallet = async (solanaAddress) => {
+    if (!supabase || !solanaAddress) return false;
     try {
         const { data, error } = await supabase
             .from('players')
             .select('wallet_address, username')
-            .eq('ton_wallet', tonAddress)
+            .eq('solana_wallet', solanaAddress)
             .single();
 
         if (data && data.wallet_address) {
@@ -258,9 +258,9 @@ export const setReferrer = async (newPlayerWallet, inviterTelegramId) => {
 
         // 1. Cek apakah pemain baru ini (newPlayer) sudah punya catatan di Supabase
         const { data: newPlayer, error: fetchErr } = await supabase
-            .from('players') // Pastikan nama tabelnya 'players' (sesuai kode loadStateFromServer di atas)
+            .from('players') 
             .select('referred_by')
-            .eq('ton_wallet', newPlayerWallet) // Cek berdasarkan ton_wallet
+            .eq('solana_wallet', newPlayerWallet) 
             .single();
 
         if (fetchErr && fetchErr.code !== 'PGRST116') {
@@ -277,13 +277,13 @@ export const setReferrer = async (newPlayerWallet, inviterTelegramId) => {
             await supabase
                 .from('players')
                 .update({ referred_by: inviterTelegramId })
-                .eq('ton_wallet', newPlayerWallet); // Hubungkan via ton_wallet
+                .eq('solana_wallet', newPlayerWallet); 
 
             // 4. Cari profil si Pengundang (Inviter) berdasarkan telegram_id mereka
             const { data: inviterData, error: inviterErr } = await supabase
                 .from('players')
                 .select('wallet_address, gold')
-                .eq('telegram_id', inviterTelegramId.toString()) // Pastikan dicari sebagai String
+                .eq('telegram_id', inviterTelegramId.toString()) 
                 .single();
 
             // 5. Jika Pengundang ditemukan, beri mereka 5,000 GOLD!
