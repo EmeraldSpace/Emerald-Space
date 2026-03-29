@@ -155,7 +155,89 @@
 
         <section id="screen-shop" class="screen" style="display:none;">
             <h2 class="location-title" style="color:var(--emerald); text-align:center; margin-bottom:15px; font-size:18px; letter-spacing:2px; font-weight:900;">GALAXY MARKET</h2>
+            
+            <!-- Elemen bawaan game asli dipertahankan -->
             <div id="shop-list"></div>
+
+            <!-- ========================================== -->
+            <!-- MULAI: NEBULA BAZAAR GACHA (SHOP INTEGRATION) -->
+            <!-- ========================================== -->
+            <div id="nebula-bazaar-container" style="position: relative; width: 100%; padding: 20px 0; overflow: hidden; border-radius: 12px; margin-top: 20px; border: 1px solid #30363d; background: #050505;">
+                <div class="stars-bg"></div>
+                <div class="twinkling-bg"></div>
+
+                <div class="main-layout" style="height: auto; min-height: 70vh; padding: 2vh 0;">
+                    <div class="header-area" style="margin-bottom: 20px;">
+                        <h1 class="title" style="font-size: 5vmin; text-align: center;">NEBULA BAZAAR</h1>
+                        <div class="wallet-status" style="justify-content: center;">
+                            <span class="status-icon">⚡</span>
+                            <span id="walletText" style="font-size: 10px;">SYSTEM ONLINE</span>
+                        </div>
+                    </div>
+
+                    <div class="machine-container" style="margin: 20px 0;">
+                        <div class="machine-body" style="margin: 0 auto;">
+                            <div class="glass-dome">
+                                <div class="glass-highlight"></div>
+                                <div class="ball-container" id="ballContainer"></div>
+                                <div class="scan-line"></div>
+                            </div>
+
+                            <div class="machine-bottom">
+                                <div class="tier-selector">
+                                    <button class="tier-btn active" data-cost="1">$1</button>
+                                    <button class="tier-btn" data-cost="2">$2</button>
+                                    <button class="tier-btn" data-cost="5">$5</button>
+                                    <button class="tier-btn" data-cost="10">$10</button>
+                                </div>
+
+                                <div class="controls-row">
+                                    <div class="coin-slot pulse-glow" id="coinSlot">
+                                        <div class="slot-opening"></div>
+                                        <span class="pay-label">20 EMRLD</span>
+                                    </div>
+                                    <div class="knob disabled-knob" id="gachaKnob">
+                                        <div class="knob-base"></div>
+                                        <div class="knob-handle"></div>
+                                    </div>
+                                </div>
+
+                                <div class="exit-area">
+                                    <div class="exit-slot">
+                                        <div class="exit-shadow-inner"></div>
+                                        <div class="door-flap" id="doorFlap"></div>
+                                        <div class="prize-ball" id="prizeBall"></div>
+                                        <div class="chute-lip"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="status-panel" style="width: 80%; margin: 0 auto;">
+                        <p id="statusText" style="font-size: 12px;">AWAITING TRANSACTION...</p>
+                    </div>
+                </div>
+
+                <!-- MODAL GACHA (Diganti ID-nya menjadi gacha-modal) -->
+                <div id="gacha-modal" class="modal" style="position: absolute;">
+                    <div class="hologram-content" id="modalContent">
+                        <div class="hologram-scanline"></div>
+                        <h2 class="hologram-title">TOKEN DECODED</h2>
+                        <div class="divider"></div>
+                        <div id="particleCanvas"></div>
+                        
+                        <img id="rewardImage" src="" alt="Token" class="reward-img">
+                        
+                        <p id="rewardText"></p>
+                        <button class="claim-btn" id="btn-claim-gacha">MINT TO WALLET</button>
+                    </div>
+                </div>
+            </div>
+            <!-- ========================================== -->
+            <!-- SELESAI: NEBULA BAZAAR GACHA -->
+            <!-- ========================================== -->
+
         </section>
         
         <section id="screen-about" class="screen" style="display:none;">
@@ -251,9 +333,6 @@
                     </div>
                 </div>
                 
-                <!-- ============================================================== -->
-                <!-- [BARU] KOTAK TOKENOMICS DAN TOMBOL PEMBELIAN BAGS & JUPITER    -->
-                <!-- ============================================================== -->
                 <div style="margin-bottom: 25px; padding: 15px; background: var(--carbon); border: 1px solid var(--gold); border-radius: 8px; text-align: left; box-shadow: 0 0 15px rgba(255, 202, 40, 0.1);">
                     <h3 style="color:var(--gold); font-size:14px; margin-bottom:15px; text-transform:uppercase; border-bottom:1px solid var(--gold); padding-bottom:5px; letter-spacing:1px; display:flex; align-items:center; gap:8px;">
                         <img src="source/item/gold.png" style="width:18px; height:18px; filter: drop-shadow(0 0 5px var(--gold));"> 
@@ -307,7 +386,6 @@
                         <a href="https://jup.ag/" target="_blank" class="btn-trade-link">BUY ON JUPITER</a>
                     </div>
                 </div>
-                <!-- ============================================================== -->
 
                 <div style="margin-bottom: 25px; padding: 15px; background: var(--carbon); border: 1px solid #30363d; border-radius: 8px; text-align: left;">
                     <h3 style="color:#3498db; font-size:14px; margin-bottom:10px; text-transform:uppercase; border-bottom:1px solid #3498db; padding-bottom:5px; display:flex; align-items:center; gap:8px;">
