@@ -873,4 +873,309 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
     setTimeout(() => toast.remove(), 4000);
 };
 
+/* =====================================================================
+   NEBULA BAZAAR - GACHA SYSTEM INTEGRATION
+   Wrapped in a self-executing function to prevent variable collisions.
+===================================================================== */
+(() => {
+    const ballContainer = document.getElementById('ballContainer');
+    // Guard clause: If the gacha machine isn't on this page, do nothing.
+    if (!ballContainer) return;
+
+    const knob = document.getElementById('gachaKnob');
+    const coinSlot = document.getElementById('coinSlot');
+    const statusText = document.getElementById('statusText');
+    const gachaModal = document.getElementById('gacha-modal'); 
+    const rewardText = document.getElementById('rewardText');
+    const rewardImage = document.getElementById('rewardImage'); 
+    const prizeBall = document.getElementById('prizeBall');
+    const machineBody = document.querySelector('.machine-body');
+    const doorFlap = document.getElementById('doorFlap');
+    const modalContent = document.getElementById('modalContent');
+    const particleCanvas = document.getElementById('particleCanvas');
+    const tierBtns = document.querySelectorAll('.tier-btn');
+    const btnClaimGacha = document.getElementById('btn-claim-gacha');
+
+    let isReadyToSpin = false;
+    let isProcessing = false;
+
+    // --- WEB3 & TOKENOMICS CONFIGURATION ---
+    const EMRLD_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; 
+    const SOL_MINT = "So11111111111111111111111111111111111111112";
+
+    let currentSpinCostUsd = 1.00; 
+    let currentEmrldPrice = 0.05; 
+    let currentSolPrice = 145.00; 
+    let costInEmrld = 20; 
+
+    let totalBurnedEmrld = 0;   
+    let totalTreasuryEmrld = 0; 
+    let systemProfitPoolUsd = 0; 
+
+    const prizes = [
+        { name: "SOLANA SPHERE V1", color: "#a8b5c2", rarity: "COMMON", img: "source/ball/ball1.png", weight: 20, payoutUsd: 0.25 },
+        { name: "SPACE JUNK", color: "#a8b5c2", rarity: "COMMON", img: "source/ball/ball2.png", weight: 20, payoutUsd: 0.25 },
+        { name: "ASTEROID ROCK", color: "#a8b5c2", rarity: "COMMON", img: "source/ball/ball3.png", weight: 20, payoutUsd: 0.25 },
+        { name: "NEBULA COIN", color: "#ffd700", rarity: "UNCOMMON", img: "source/ball/ball4.png", weight: 15, payoutUsd: 0.50 },
+        { name: "PLASMA ORB", color: "#ff00ea", rarity: "UNCOMMON", img: "source/ball/ball5.png", weight: 10, payoutUsd: 0.50 },
+        { name: "QUANTUM SHARD", color: "#ff3300", rarity: "RARE", img: "source/ball/ball6.png", weight: 6, payoutUsd: 1.50 },
+        { name: "CYBER TOKEN", color: "#00f3ff", rarity: "RARE", img: "source/ball/ball7.png", weight: 4, payoutUsd: 1.50 },
+        { name: "VOID ARTIFACT", color: "#9b59b6", rarity: "EPIC", img: "source/ball/ball8.png", weight: 4, payoutUsd: 3.00 },
+        { name: "GALACTIC RELIC", color: "#ffffff", rarity: "MYTHIC", img: "source/ball/ball9.png", weight: 1, payoutUsd: 5.00 }
+    ];
+
+    function initBalls() {
+        ballContainer.innerHTML = '';
+        const totalBalls = 14; 
+        for (let i = 0; i < totalBalls; i++) {
+            const ball = document.createElement('div');
+            ball.className = 'ball';
+            const randomPrize = prizes[Math.floor(Math.random() * prizes.length)];
+            ball.style.backgroundImage = `url('${randomPrize.img}')`;
+            ball.style.transform = `translateX(${Math.random() * 30 - 15}px) rotate(${Math.random() * 360}deg)`;
+            ballContainer.appendChild(ball);
+        }
+    }
+
+    function updateCostUI() {
+        costInEmrld = (currentSpinCostUsd / currentEmrldPrice).toFixed(2);
+        const payLabel = document.querySelector('.pay-label');
+        if (payLabel) payLabel.innerText = `${costInEmrld} EMRLD`;
+    }
+
+    tierBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            if (isProcessing || isReadyToSpin) return;
+            
+            tierBtns.forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            currentSpinCostUsd = parseFloat(e.target.getAttribute('data-cost'));
+            updateCostUI();
+        });
+    });
+
+    async function fetchRealTimePrices() {
+        try {
+            const response = await fetch(`https://price.jup.ag/v6/price?ids=${SOL_MINT},${EMRLD_MINT}`);
+            const data = await response.json();
+            if(data.data[SOL_MINT]) currentSolPrice = data.data[SOL_MINT].price;
+            if(data.data[EMRLD_MINT]) currentEmrldPrice = data.data[EMRLD_MINT].price;
+        } catch (error) {
+            console.log("Using simulated API prices.");
+        }
+        updateCostUI();
+    }
+    fetchRealTimePrices();
+
+    async function simulateTransaction() {
+        if (isReadyToSpin || isProcessing) return;
+        isProcessing = true;
+        
+        tierBtns.forEach(b => b.disabled = true);
+        
+        coinSlot.classList.remove('pulse-glow');
+        coinSlot.style.borderColor = "#fff";
+        coinSlot.querySelector('.pay-label').style.color = "#fff";
+        statusText.innerText = `PAYING ${costInEmrld} $EMRLD...`;
+        statusText.style.color = "#fff";
+        
+        await new Promise(resolve => setTimeout(resolve, 2000)); 
+        
+        const burnedAmount = costInEmrld * 0.5;
+        const treasuryAmount = costInEmrld * 0.5;
+        totalBurnedEmrld += burnedAmount;
+        totalTreasuryEmrld += treasuryAmount;
+        systemProfitPoolUsd += currentSpinCostUsd; 
+
+        console.log(`--- SYSTEM ECONOMY REPORT ---`);
+        console.log(`Ticket Price: $${currentSpinCostUsd}`);
+        console.log(`🔥 Burned: ${totalBurnedEmrld.toFixed(2)} EMRLD`);
+        console.log(`🏦 Treasury: ${totalTreasuryEmrld.toFixed(2)} EMRLD`);
+        console.log(`💰 Sytem Profit Pool:$${systemProfitPoolUsd.toFixed(2)}`);
+        console.log(`-----------------------------`);
+
+        isProcessing = false;
+        isReadyToSpin = true;
+        
+        coinSlot.style.borderColor = "#333";
+        coinSlot.querySelector('.pay-label').style.color = "#555";
+        
+        statusText.innerText = "TX CONFIRMED. PULL LEVER.";
+        statusText.style.color = "#00f3ff";
+        statusText.style.textShadow = "0 0 10px #00f3ff";
+        
+        knob.classList.remove('disabled-knob');
+        knob.style.borderColor = "#00f3ff";
+        knob.style.boxShadow = "0 0 20px rgba(0, 243, 255, 0.4)";
+    }
+
+    if (coinSlot) coinSlot.addEventListener('click', simulateTransaction);
+
+    function getDynamicPrize() {
+        let availablePool = prizes.filter(p => p.rarity === "COMMON" || p.rarity === "UNCOMMON");
+        
+        if (systemProfitPoolUsd >= 10.00 * currentSpinCostUsd) { 
+            availablePool = availablePool.concat(prizes.filter(p => p.rarity === "RARE"));
+        }
+        if (systemProfitPoolUsd >= 30.00 * currentSpinCostUsd) { 
+            availablePool = availablePool.concat(prizes.filter(p => p.rarity === "EPIC"));
+        }
+        if (systemProfitPoolUsd >= 50.00 * currentSpinCostUsd) { 
+            availablePool = availablePool.concat(prizes.filter(p => p.rarity === "MYTHIC"));
+        }
+
+        const totalWeight = availablePool.reduce((sum, prize) => sum + prize.weight, 0);
+        let randomNum = Math.random() * totalWeight;
+        
+        let basePrize;
+        for (let i = 0; i < availablePool.length; i++) {
+            if (randomNum < availablePool[i].weight) {
+                basePrize = availablePool[i];
+                break;
+            }
+            randomNum -= availablePool[i].weight;
+        }
+
+        let finalPrize = { ...basePrize };
+        finalPrize.actualPayoutUsd = finalPrize.payoutUsd * currentSpinCostUsd;
+        systemProfitPoolUsd -= finalPrize.actualPayoutUsd;
+        
+        return finalPrize;
+    }
+
+    if (knob) {
+        knob.addEventListener('click', () => {
+            if (!isReadyToSpin || isProcessing) return;
+
+            isProcessing = true;
+            isReadyToSpin = false;
+            
+            knob.style.borderColor = "#444";
+            knob.style.boxShadow = "0 10px 20px rgba(0,0,0,0.8)";
+            knob.classList.add('disabled-knob');
+            machineBody.classList.add('shake-animation');
+            knob.classList.add('rotate-knob');
+            
+            statusText.innerText = "EXTRACTING MATTER...";
+            statusText.style.color = "#ff00ea";
+            statusText.style.textShadow = "0 0 10px #ff00ea";
+
+            const balls = document.querySelectorAll('.ball');
+            balls.forEach((ball) => {
+                const jumpHeight = Math.random() * 140 + 60;
+                const sideMove = Math.random() * 80 - 40;
+                ball.style.transition = `transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)`;
+                ball.style.transform = `translate(${sideMove}px, -${jumpHeight}px) rotate(${Math.random()*1080}deg)`;
+            });
+
+            setTimeout(() => {
+                balls.forEach((ball) => {
+                    const randomX = Math.random() * 30 - 15;
+                    ball.style.transition = `transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)`;
+                    ball.style.transform = `translate(${randomX}px, 0px) rotate(${Math.random()*360}deg)`;
+                });
+            }, 450);
+
+            setTimeout(() => {
+                machineBody.classList.remove('shake-animation');
+                knob.classList.remove('rotate-knob');
+                statusText.innerText = "ITEM READY FOR RETRIEVAL";
+                
+                const winPrize = getDynamicPrize();
+                
+                prizeBall.style.backgroundImage = `url('${winPrize.img}')`;
+                if (ballContainer.children.length > 0) ballContainer.removeChild(ballContainer.lastChild);
+
+                prizeBall.classList.add('drop-animation');
+                setTimeout(() => { doorFlap.style.transform = "rotateX(75deg)"; }, 400); 
+                setTimeout(() => { doorFlap.style.transform = "rotateX(30deg)"; }, 900);
+                setTimeout(() => showPrize(winPrize), 1400);
+
+            }, 1500);
+        });
+    }
+
+    function createExplosion(color) {
+        particleCanvas.innerHTML = '';
+        const particleCount = 30;
+        for(let i = 0; i < particleCount; i++) {
+            const p = document.createElement('div');
+            p.style.position = 'absolute';
+            p.style.width = '6px'; p.style.height = '6px';
+            p.style.background = color; p.style.borderRadius = '50%';
+            p.style.top = '50%'; p.style.left = '50%';
+            p.style.boxShadow = `0 0 10px ${color}`;
+            p.style.pointerEvents = 'none';
+            
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 150 + 50;
+            const tx = Math.cos(angle) * distance;
+            const ty = Math.sin(angle) * distance;
+            
+            p.style.transition = `all ${Math.random() * 0.5 + 0.5}s cubic-bezier(0.1, 0.8, 0.3, 1)`;
+            particleCanvas.appendChild(p);
+            
+            setTimeout(() => {
+                p.style.transform = `translate(${tx}px, ${ty}px) scale(0)`;
+                p.style.opacity = '0';
+            }, 10);
+        }
+    }
+
+    function showPrize(win) {
+        rewardImage.src = win.img;
+        rewardImage.style.filter = `drop-shadow(0 0 20px ${win.color})`;
+
+        let wonSol = (win.actualPayoutUsd / currentSolPrice).toFixed(4); 
+        
+        let prizeColor = win.actualPayoutUsd < currentSpinCostUsd ? "#f1c40f" : "#4ade80"; 
+        let prizeMessage = `+ ${wonSol} SOL ($${win.actualPayoutUsd.toFixed(2)})`;
+
+        rewardText.innerHTML = `<span style="font-size: 0.8rem; color: #888; font-family: 'Orbitron', sans-serif;">[CLASS: ${win.rarity}]</span><br>
+        <b style="color:${win.color}; font-size:1.8rem; text-shadow: 0 0 20px ${win.color}; text-transform: uppercase;">${win.name}</b><br>
+        <div style="background: rgba(0,0,0,0.5); border: 1px solid ${prizeColor}; border-radius: 8px; padding: 5px 10px; margin-top: 15px; display: inline-block;">
+            <span style="color:${prizeColor}; font-weight:bold; font-size:1.1rem; letter-spacing: 1px;">${prizeMessage}</span>
+        </div>`;
+        
+        modalContent.style.borderColor = win.color;
+        modalContent.style.boxShadow = `0 0 40px rgba(0,0,0,0.9), inset 0 0 20px ${win.color}`;
+        modalContent.querySelector('.hologram-title').style.color = win.color;
+        modalContent.querySelector('.hologram-title').style.textShadow = `0 0 15px ${win.color}`;
+        
+        gachaModal.style.display = 'flex';
+        createExplosion(win.color);
+    }
+
+    function closeModal() {
+        gachaModal.style.display = 'none';
+        isProcessing = false;
+        
+        tierBtns.forEach(b => b.disabled = false);
+        
+        coinSlot.classList.add('pulse-glow');
+        coinSlot.style.borderColor = "";
+        coinSlot.querySelector('.pay-label').style.color = "var(--neon-gold)";
+        
+        statusText.innerText = "AWAITING TRANSACTION...";
+        statusText.style.color = "#888";
+        statusText.style.textShadow = "none";
+        
+        doorFlap.style.transform = "rotateX(0deg)";
+        prizeBall.classList.remove('drop-animation');
+        prizeBall.style.opacity = '0'; 
+
+        if (ballContainer.children.length < 4) initBalls();
+    }
+
+    // Attach event listener to the claim button
+    if (btnClaimGacha) {
+        btnClaimGacha.addEventListener('click', closeModal);
+    }
+
+    // Initialize the gacha balls
+    initBalls();
+})();
+
+
 document.addEventListener("DOMContentLoaded", initGame);
