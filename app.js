@@ -13,7 +13,7 @@ import { playSFX, playBGM, toggleBGM, toggleSFX } from './js/logic/audio.js';
 import { initStarfield } from './js/ui/starfield.js'; 
 import { connectSolanaWallet } from './js/logic/crypto.js'; 
 
-export let connectedWalletAddress = null; // Di-export agar bisa diakses jika butuh dari file lain
+export let connectedWalletAddress = null;
 
 window.showSimplePopup = (title, message, color = "var(--emerald)") => {
     const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
@@ -317,12 +317,12 @@ async function handleWalletSelection(walletType) {
     if(typeof playSFX === 'function') playSFX('click');
     if (walletOverlay) walletOverlay.style.display = 'none';
     
+    // Asumsi fungsi connectSolanaWallet sudah tersedia di crypto.js
     const result = await connectSolanaWallet(walletType);
     
     if (result.success) {
         let currentWalletAddr = result.address;
         
-        // FIX: Membuka kunci tombol Start
         connectedWalletAddress = currentWalletAddr; 
         
         const isRecovered = await checkAndRecoverWallet(currentWalletAddr);
@@ -491,7 +491,7 @@ const initAbout = async () => {
                     
                     <h2 style="color: #14F195; text-align: center; margin-bottom: 15px; letter-spacing: 2px; font-size: 18px; text-shadow: 0 0 10px #14F195;">
                         <img src="source/icon/about.png" style="width:24px; vertical-align:-5px; filter: drop-shadow(0 0 5px #14F195); margin-right: 5px;"> 
-                        OFFICIAL WHITEPAPER
+                        PROJECT DOSSIER
                     </h2>
 
                     <div style="background: linear-gradient(180deg, #161b22, #0d1117); border: 1px solid var(--gold); padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; box-shadow: 0 0 20px rgba(255, 202, 40, 0.15); position: relative; overflow: hidden;">
@@ -506,50 +506,39 @@ const initAbout = async () => {
                         <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 5px;">
                             <span style="color:#8b949e; font-size:16px;">+</span>
                             <div style="display:flex; flex-direction:column; align-items:center;">
-                                <div style="color: var(--emerald); font-size: 22px; font-weight: 900; text-shadow: 0 0 15px rgba(46, 204, 113, 0.6); animation: pulse 2s infinite;">100,000,000 $EMRLD</div>
-                                <div style="color: #8b949e; font-size: 10px; font-weight: bold; margin-top: 2px;">Distribution: <span style="color:var(--gold);">Elite 60%</span> | <span style="color:#e6edf3;">Reg 40%</span></div>
+                                <div style="color: #3498db; font-size: 22px; font-weight: 900; text-shadow: 0 0 15px rgba(52, 152, 219, 0.6); animation: pulse 2s infinite;">1,000 USDC</div>
+                                <div style="color: #8b949e; font-size: 10px; font-weight: bold; margin-top: 2px;">Distribution: <span style="color:var(--gold);">Top Pilots & Boss Raiders</span></div>
                             </div>
                         </div>
                     </div>
                     
                     <div style="background: rgba(46, 204, 113, 0.05); border-left: 3px solid var(--emerald); padding: 12px; margin-bottom: 20px; border-radius: 0 6px 6px 0;">
-                        <strong style="color: var(--emerald); font-size: 13px; display: block; margin-bottom: 4px; text-transform: uppercase;">The TMA Paradigm Shift</strong>
+                        <strong style="color: var(--emerald); font-size: 13px; display: block; margin-bottom: 4px; text-transform: uppercase;">100% LAUNCH ON BAGS APP</strong>
                         <p style="color: #c9d1d9; font-size: 11px; line-height: 1.6; margin: 0; text-align: justify;">
-                            Emerald Space is pioneering the next generation of <strong>Telegram Mini-Apps (TMA)</strong> powered directly by the Solana Network. We are dismantling the predatory "Play-to-Earn" model. By merging hyper-deflationary tokenomics with a sustainable organic treasury, we guarantee that the value created by the players, stays with the players.
+                            Emerald Space is officially launching 100% on the <strong>Bags App</strong> ecosystem! No VCs, no presales—just pure, community-driven space exploration on the Solana Network. Get your ship, forge your weapons, and earn real yield!
                         </p>
                     </div>
                     
                     <h3 style="color: var(--gold); font-size: 14px; margin-bottom: 12px; border-bottom: 1px solid #30363d; padding-bottom: 5px; text-transform: uppercase; display: flex; align-items: center; gap: 8px;">
-                        💎 Strategic Token Distribution
+                        🚀 CORE GAME FEATURES
                     </h3>
-                    <p style="color: #8b949e; font-size: 11px; line-height: 1.6; margin-bottom: 12px; text-align: justify;">
-                        Total Supply: <strong style="color:#e6edf3;">1,000,000,000 $EMRLD</strong>. Our economy is designed for sustainable growth, rewarding active pilots and early adopters in the Solana ecosystem.
-                    </p>
                     
                     <div style="background: #161b22; border: 1px solid #30363d; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">🎮 Play-to-Airdrop (35%)</span>
-                            <strong style="color:#2ecc71; font-size:11px; text-align: right; line-height: 1.4;">350,000,000</strong>
+                        <div style="margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
+                            <span style="color:#2ecc71; font-size:11px; font-weight: bold;">⚔️ MMO Global Boss Raids</span>
+                            <div style="color:#8b949e; font-size:10px; line-height:1.4; margin-top:3px;">Unite with the entire server to defeat the Leviathan. Deal damage, survive, and secure massive SOL & USDC payouts!</div>
                         </div>
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">💧 Liquidity & MM (20%)</span>
-                            <strong style="color:#14F195; font-size:11px; text-align: right; line-height: 1.4;">200,000,000</strong>
+                        <div style="margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
+                            <span style="color:#14F195; font-size:11px; font-weight: bold;">🎲 Web3 Black Market Gacha</span>
+                            <div style="color:#8b949e; font-size:10px; line-height:1.4; margin-top:3px;">Roll secure on-chain crates using SOL to unlock Mythic and Legendary ship equipment directly to your inventory.</div>
                         </div>
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">🚀 Ecosystem & Marketing (15%)</span>
-                            <strong style="color:#e6edf3; font-size:11px; text-align: right; line-height: 1.4;">150,000,000</strong>
+                        <div style="margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
+                            <span style="color:var(--gold); font-size:11px; font-weight: bold;">🛠️ Smart Forge & Crafting</span>
+                            <div style="color:#8b949e; font-size:10px; line-height:1.4; margin-top:3px;">Dismantle weak items into Iron Ore & Dark Energy. Combine duplicates to evolve your gear to the highest rarity!</div>
                         </div>
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">🛠️ Core Team (15%)</span>
-                            <strong style="color:#ff4444; font-size:11px; text-align: right; line-height: 1.4;">150,000,000 <span style="font-size:9px; font-weight:normal; color:#8b949e; display:block;">(24-Month Vesting)</span></strong>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">🎖️ Early Adopters (10%)</span>
-                            <strong style="color:var(--gold); font-size:11px; text-align: right; line-height: 1.4;">100,000,000 <span style="font-size:9px; font-weight:normal; color:#8b949e; display:block;">(Elite & Beta Players)</span></strong>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-                            <span style="color:#8b949e; font-size:11px; font-weight: bold; flex-shrink: 0;">🤝 Advisors & Partners (5%)</span>
-                            <strong style="color:#e6edf3; font-size:11px; text-align: right; line-height: 1.4;">50,000,000</strong>
+                        <div>
+                            <span style="color:#e6edf3; font-size:11px; font-weight: bold;">🔒 Elite VIP Sectors</span>
+                            <div style="color:#8b949e; font-size:10px; line-height:1.4; margin-top:3px;">Hold 0.5 SOL or an Elite License to access high-risk, high-reward galaxies with exclusive material drops.</div>
                         </div>
                     </div>
 
@@ -563,28 +552,19 @@ const initAbout = async () => {
                     <div style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;">
                         <div style="background: rgba(20, 241, 149, 0.05); padding: 10px; border-radius: 6px; border-left: 2px solid #14F195;">
                             <strong style="color:#14F195; font-size:12px; display:block; margin-bottom:2px;">1. Auto-Buyback (60%)</strong>
-                            <span style="color:#e6edf3; font-size:10px; line-height:1.4;">60% of all in-game SOL revenue is injected straight into the liquidity pool to buy back $EMRLD from the open market, creating constant buying pressure.</span>
+                            <span style="color:#e6edf3; font-size:10px; line-height:1.4;">60% of all in-game SOL revenue is injected straight into the liquidity pool to support the ecosystem.</span>
                         </div>
                         
                         <div style="background: rgba(255, 68, 68, 0.05); padding: 10px; border-radius: 6px; border-left: 2px solid #ff4444;">
                             <strong style="color:#ff4444; font-size:12px; display:block; margin-bottom:2px;">2. Hyper-Deflation (Burn)</strong>
-                            <span style="color:#e6edf3; font-size:10px; line-height:1.4;">50% of those bought-back tokens are instantly sent to a dead address (<strong style="color:#ff4444;">BURNED</strong>). The total supply shrinks perpetually, driving extreme scarcity over time.</span>
+                            <span style="color:#e6edf3; font-size:10px; line-height:1.4;">50% of those bought-back tokens are instantly sent to a dead address (<strong style="color:#ff4444;">BURNED</strong>). Driving extreme scarcity over time.</span>
                         </div>
 
                         <div style="background: rgba(255, 202, 40, 0.05); padding: 10px; border-radius: 6px; border-left: 2px solid var(--gold);">
                             <strong style="color:var(--gold); font-size:12px; display:block; margin-bottom:2px;">3. Real Yield Reward</strong>
-                            <span style="color:#e6edf3; font-size:10px; line-height:1.4;">The remaining 50% flows directly into the Global Prize Pool to reward active pilots based on Leaderboard rankings. No inflationary printing, just real revenue sharing.</span>
+                            <span style="color:#e6edf3; font-size:10px; line-height:1.4;">The remaining 50% flows directly into the Global Prize Pool. Real revenue sharing via USDC and SOL!</span>
                         </div>
                     </div>
-
-                    <h3 style="color: #3498db; font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #30363d; padding-bottom: 5px; text-transform: uppercase;">
-                        🔑 Telegram & Token Utility
-                    </h3>
-                    <ul style="color: #8b949e; font-size: 11px; line-height: 1.6; padding-left: 20px; margin-bottom: 25px;">
-                        <li style="margin-bottom: 6px;"><strong style="color:#e6edf3;">Elite Clearance:</strong> Holding $EMRLD is the only way to unlock VIP Map Sectors, secure Whitelist allocations, and access high-tier resource drops.</li>
-                        <li style="margin-bottom: 6px;"><strong style="color:#e6edf3;">The Cosmic Black Market:</strong> $EMRLD serves as the backbone currency for peer-to-peer trading of rare ship blueprints and mythic armaments.</li>
-                        <li><strong style="color:#ffca28; text-shadow: 0 0 5px rgba(255,202,40,0.4);">Official Solana NFT Arsenal (Phase 2):</strong> Elite Ships and Mythic Gear will soon be minted as true Solana NFTs. $EMRLD will be the <strong>exclusive fuel</strong> required to forge, upgrade, and deploy these tournament-grade assets.</li>
-                    </ul>
                     
                     <button id="btn-close-tokenomics" style="width: 100%; padding: 14px; background: transparent; border: 1px solid #14F195; color: #14F195; font-weight: 900; border-radius: 6px; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; box-shadow: inset 0 0 10px rgba(20,241,149,0.1);">
                         ACKNOWLEDGE & CLOSE
@@ -684,20 +664,39 @@ const initAbout = async () => {
         if (oldPrizePoolEl) oldPrizePoolEl.innerHTML = '<span style="color:#8b949e;">CALCULATING...</span>';
         if (popupPrizePoolEl) popupPrizePoolEl.innerText = "CALCULATING...";
 
+        // Kita gunakan fungsi API solana secara manual karena getAddressBalance milik toncenter tidak berfungsi untuk SOL
         try {
-            // Kita biarkan admin wallet divalidasi nanti karena API SOL berbeda dari TON
+            const adminWallet = 'ExNJ84TBmLsy7FB4duYteK5bWXEEuofSStPHCcA7TeQc';
+            const req = await fetch('https://mainnet.helius-rpc.com/?api-key=79850b9a-0b16-45cc-9ff8-b38375ea7d14', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jsonrpc: '2.0', id: 1,
+                    method: 'getBalance',
+                    params: [adminWallet]
+                })
+            });
+            const data = await req.json();
+            
+            let realSol = 0;
+            if (data && data.result && data.result.value) {
+                realSol = data.result.value / 1000000000;
+            }
+            
+            const finalSolText = `${realSol.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} SOL`;
+
             if (oldPrizePoolEl) {
                 oldPrizePoolEl.innerHTML = `
-                    <div style="color: #14F195; font-size: 22px; font-weight: 900; text-shadow: 0 0 10px rgba(20, 241, 149, 0.6);">LOADING SOL...</div>
+                    <div style="color: #14F195; font-size: 22px; font-weight: 900; text-shadow: 0 0 10px rgba(20, 241, 149, 0.6);">${finalSolText}</div>
                     <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-bottom: 8px; letter-spacing: 0.5px;">(Elite 80% | Reg 20%)</div>
                     <div style="color: #8b949e; font-size: 14px; margin: 4px 0;">+</div>
-                    <div style="color: var(--emerald); font-size: 18px; font-weight: 900; text-shadow: 0 0 10px rgba(46, 204, 113, 0.6); animation: pulse 2s infinite;">100,000,000 $EMRLD</div>
-                    <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-top: 4px; letter-spacing: 0.5px;">(Elite 60% | Reg 40%)</div>
+                    <div style="color: #3498db; font-size: 18px; font-weight: 900; text-shadow: 0 0 10px rgba(52, 152, 219, 0.6); animation: pulse 2s infinite;">1,000 USDC</div>
+                    <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-top: 4px; letter-spacing: 0.5px;">(Top Pilots Reward)</div>
                 `;
             }
 
             if (popupPrizePoolEl) {
-                popupPrizePoolEl.innerText = "LOADING SOL...";
+                popupPrizePoolEl.innerText = finalSolText;
             }
 
         } catch (err) {
@@ -707,8 +706,8 @@ const initAbout = async () => {
                     <div style="color: #14F195; font-size: 22px; font-weight: 900;">0.00 SOL</div>
                     <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-bottom: 8px; letter-spacing: 0.5px;">(Elite 80% | Reg 20%)</div>
                     <div style="color: #8b949e; font-size: 14px; margin: 4px 0;">+</div>
-                    <div style="color: var(--emerald); font-size: 18px; font-weight: 900;">100,000,000 $EMRLD</div>
-                    <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-top: 4px; letter-spacing: 0.5px;">(Elite 60% | Reg 40%)</div>
+                    <div style="color: #3498db; font-size: 18px; font-weight: 900;">1,000 USDC</div>
+                    <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-top: 4px; letter-spacing: 0.5px;">(Top Pilots Reward)</div>
                 `;
             }
             if (popupPrizePoolEl) popupPrizePoolEl.innerText = "0.00 SOL"; 
