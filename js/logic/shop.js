@@ -1,20 +1,20 @@
 /* =========================================
-   SHOP LOGIC (TON NETWORK & GOLD)
+   SHOP LOGIC (SOLANA NETWORK & GOLD)
    ========================================= */
 
 import { getState, updateState } from './state.js';
 import { generateItem } from './itemGenerator.js';
 
 export const SHOP_ITEMS = {
-    // === PAKET PEMBELIAN GOLD MENGGUNAKAN TON ===
-    TON_1: { name: "100,000 Gold", price: 0.1, reward: 100000, isTON: true, image: "source/item/gold.png", description: "Buy 100,000 Gold for 0.1 TON." },
-    TON_5: { name: "550,000 Gold", price: 0.5, reward: 550000, isTON: true, image: "source/item/gold.png", description: "Buy 550,000 Gold for 0.5 TON. (10% Bonus)" },
-    TON_10: { name: "1,200,000 Gold", price: 1.0, reward: 1200000, isTON: true, image: "source/item/gold.png", description: "Buy 1.2M Gold for 1.0 TON. (20% Bonus)" },
-    TON_25: { name: "3,250,000 Gold", price: 2.5, reward: 3250000, isTON: true, image: "source/item/gold.png", description: "Buy 3.25M Gold for 2.5 TON. (30% Bonus)" },
-    TON_100: { name: "15,000,000 Gold", price: 10.0, reward: 15000000, isTON: true, image: "source/item/gold.png", description: "Buy 15M Gold for 10.0 TON. (50% Bonus)" },
-    TON_1000: { name: "200,000,000 Gold", price: 100.0, reward: 200000000, isTON: true, image: "source/item/gold.png", description: "Buy 200M Gold for 100.0 TON. (100% Bonus)" },
+    // === GOLD PURCHASE PACKAGES USING SOLANA ===
+    SOL_1: { name: "100,000 Gold", price: 0.05, reward: 100000, isSOL: true, image: "source/item/gold.png", description: "Buy 100,000 Gold for 0.05 SOL." },
+    SOL_5: { name: "550,000 Gold", price: 0.25, reward: 550000, isSOL: true, image: "source/item/gold.png", description: "Buy 550,000 Gold for 0.25 SOL. (10% Bonus)" },
+    SOL_10: { name: "1,200,000 Gold", price: 0.5, reward: 1200000, isSOL: true, image: "source/item/gold.png", description: "Buy 1.2M Gold for 0.5 SOL. (20% Bonus)" },
+    SOL_25: { name: "3,250,000 Gold", price: 1.25, reward: 3250000, isSOL: true, image: "source/item/gold.png", description: "Buy 3.25M Gold for 1.25 SOL. (30% Bonus)" },
+    SOL_100: { name: "15,000,000 Gold", price: 5.0, reward: 15000000, isSOL: true, image: "source/item/gold.png", description: "Buy 15M Gold for 5.0 SOL. (50% Bonus)" },
+    SOL_1000: { name: "200,000,000 Gold", price: 50.0, reward: 200000000, isSOL: true, image: "source/item/gold.png", description: "Buy 200M Gold for 50.0 SOL. (100% Bonus)" },
     
-    // === ITEM NORMAL MENGGUNAKAN GOLD ===
+    // === NORMAL ITEMS USING GOLD ===
     STAMINA_REFILL: { name: "Stamina Refill", price: 200, image: "source/icon/stamina.png", description: "Instantly restores stamina to maximum." },
     IRON_ORE: { name: "Iron Ore", price: 5000, image: "source/item/ore.png", description: "Basic crafting material." },
     DARK_ENERGY: { name: "Dark Energy", price: 25000, image: "source/item/energy.png", description: "Pure legendary energy." },
@@ -31,8 +31,7 @@ export const buyMaterial = async (itemKey, quantity = 1) => {
 
     if (!item) return { success: false, message: "Item not found!" };
     
-    // [UPDATE] Menghapus isSOL, sekarang 100% TON
-    if (item.isTON) return { success: false, message: "Crypto items are processed securely via Wallet Connection." }; 
+    if (item.isSOL) return { success: false, message: "Crypto items are processed securely via Wallet Connection." }; 
 
     let totalCost = 0;
 
@@ -48,7 +47,7 @@ export const buyMaterial = async (itemKey, quantity = 1) => {
 
     if (state.profile.gold < totalCost) return { success: false, message: "Not enough Gold!" };
 
-    // Simulasi jeda waktu server agar terlihat realistis
+    // Server processing simulation delay
     await new Promise(resolve => setTimeout(resolve, 800));
 
     const updatedProfile = { ...state.profile };
