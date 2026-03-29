@@ -42,7 +42,8 @@ export const initPrivy = async () => {
 
 // Multi-Provider Connect Wallet (Telegram/Privy, Phantom, Solflare)
 export const connectWallet = async (walletType) => {
-    playSFX('click');
+    if (typeof playSFX === 'function') playSFX('click');
+    
     try {
         if (walletType === 'privy' || walletType === 'telegram') {
             await initPrivy();
@@ -54,10 +55,10 @@ export const connectWallet = async (walletType) => {
                 if (solanaAccount) {
                     return solanaAccount.address; 
                 } else {
-                    throw new Error("Embedded wallet creation failed.");
+                    throw new Error("Embedded wallet creation failed. Please try again.");
                 }
             } else {
-                throw new Error("Login cancelled.");
+                throw new Error("Login cancelled by Pilot.");
             }
             
         } else if (walletType === 'phantom') {
@@ -65,21 +66,44 @@ export const connectWallet = async (walletType) => {
                 const resp = await window.phantom.solana.connect();
                 return resp.publicKey.toString();
             } else {
-                throw new Error("Phantom not found! If on mobile, open this game inside the Phantom App browser.");
+                // MOBILE DEEP LINKING: Auto-redirect to Phantom App if on Mobile Chrome/Safari
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                if (isMobile) {
+                    const currentUrl = encodeURIComponent(window.location.href);
+                    window.location.href = `https://phantom.app/ul/browse/${currentUrl}`;
+                    return new Promise(() => {}); // Pause execution while redirecting
+                } else {
+                    throw new Error("Phantom extension not found! Please install it.");
+                }
             }
+            
         } else if (walletType === 'solflare') {
             if (window.solflare) {
                 await window.solflare.connect();
                 return window.solflare.publicKey.toString();
             } else {
-                throw new Error("Solflare not found! If on mobile, open this game inside the Solflare App browser.");
+                // MOBILE DEEP LINKING: Auto-redirect to Solflare App
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                if (isMobile) {
+                    const currentUrl = encodeURIComponent(window.location.href);
+                    window.location.href = `https://solflare.com/ul/v1/browse/${currentUrl}`;
+                    return new Promise(() => {});
+                } else {
+                    throw new Error("Solflare extension not found! Please install it.");
+                }
             }
         }
         return null;
+
     } catch (err) {
         console.error("Connection Error:", err);
         if (typeof window.showSimplePopup === 'function') {
-            window.showSimplePopup("WALLET CONNECTION", err.message, "#ff4444");
+            // Clean up the error message for better UI reading
+            let errorMsg = err.message;
+            if (errorMsg.includes("User rejected") || errorMsg.includes("User canceled")) {
+                errorMsg = "Connection request was cancelled by the user.";
+            }
+            window.showSimplePopup("WALLET CONNECTION", errorMsg, "#ff4444");
         }
         return null;
     }
@@ -104,7 +128,7 @@ export const disconnectWallet = async () => {
 };
 
 export const payWithSOL = async (solAmount) => {
-    playSFX('click');
+    if (typeof playSFX === 'function') playSFX('click');
     try {
         const solanaWeb3 = window.solanaWeb3;
         if (!solanaWeb3) throw new Error("Solana Web3 Library missing!");
