@@ -271,7 +271,6 @@ if (btnOpenPopup) {
         if(typeof playSFX === 'function') playSFX('click');
         
         if (walletOverlay) {
-            // Ubah gaya overlay agar bertema Solana
             const modalBox = walletOverlay.querySelector('.modal-box');
             if (modalBox) modalBox.style.borderColor = "#14F195";
             
@@ -284,7 +283,6 @@ if (btnOpenPopup) {
 
             const wrapper = document.getElementById('ton-connect-wrapper');
             if (wrapper) {
-                // Suntikkan tombol Phantom & Solflare
                 wrapper.innerHTML = `
                     <div style="display:flex; flex-direction:column; gap:12px; width:100%; margin-bottom:10px;">
                         <button id="btn-phantom" style="width:100%; padding:14px; background:#17161a; color:#fff; border:1px solid #ab9ff2; border-radius:8px; font-weight:900; letter-spacing:1px; cursor:pointer; box-shadow:0 0 10px rgba(171, 159, 242, 0.2);">
@@ -317,7 +315,6 @@ async function handleWalletSelection(walletType) {
     if(typeof playSFX === 'function') playSFX('click');
     if (walletOverlay) walletOverlay.style.display = 'none';
     
-    // Asumsi fungsi connectSolanaWallet sudah tersedia di crypto.js
     const result = await connectSolanaWallet(walletType);
     
     if (result.success) {
@@ -664,8 +661,8 @@ const initAbout = async () => {
         if (oldPrizePoolEl) oldPrizePoolEl.innerHTML = '<span style="color:#8b949e;">CALCULATING...</span>';
         if (popupPrizePoolEl) popupPrizePoolEl.innerText = "CALCULATING...";
 
-        // Kita gunakan fungsi API solana secara manual karena getAddressBalance milik toncenter tidak berfungsi untuk SOL
         try {
+            // Kita gunakan fungsi API solana secara manual karena getAddressBalance milik toncenter tidak berfungsi untuk SOL
             const adminWallet = 'ExNJ84TBmLsy7FB4duYteK5bWXEEuofSStPHCcA7TeQc';
             const req = await fetch('https://mainnet.helius-rpc.com/?api-key=79850b9a-0b16-45cc-9ff8-b38375ea7d14', {
                 method: 'POST',
