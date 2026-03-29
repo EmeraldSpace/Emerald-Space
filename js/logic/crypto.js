@@ -44,6 +44,9 @@ export const initPrivy = async () => {
 export const connectWallet = async (walletType) => {
     if (typeof playSFX === 'function') playSFX('click');
     
+    // Detect if the user is on a mobile device
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
     try {
         if (walletType === 'privy' || walletType === 'telegram') {
             await initPrivy();
@@ -62,35 +65,35 @@ export const connectWallet = async (walletType) => {
             }
             
         } else if (walletType === 'phantom') {
+            // FORCE DEEP LINK: If mobile and NOT inside Phantom's in-app browser
+            if (isMobile && (!window.phantom || !window.phantom.solana || !window.phantom.solana.isPhantom)) {
+                const currentUrl = encodeURIComponent(window.location.href);
+                window.location.href = `https://phantom.app/ul/browse/${currentUrl}?ref=${currentUrl}`;
+                return new Promise(() => {}); // Pause execution while redirecting
+            }
+
+            // Normal connection for PC or inside Phantom App
             if (window.phantom && window.phantom.solana) {
                 const resp = await window.phantom.solana.connect();
                 return resp.publicKey.toString();
             } else {
-                // MOBILE DEEP LINKING: Auto-redirect to Phantom App if on Mobile Chrome/Safari
-                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                if (isMobile) {
-                    const currentUrl = encodeURIComponent(window.location.href);
-                    window.location.href = `https://phantom.app/ul/browse/${currentUrl}`;
-                    return new Promise(() => {}); // Pause execution while redirecting
-                } else {
-                    throw new Error("Phantom extension not found! Please install it.");
-                }
+                throw new Error("Phantom extension not found! Please install it.");
             }
             
         } else if (walletType === 'solflare') {
+            // FORCE DEEP LINK: If mobile and NOT inside Solflare's in-app browser
+            if (isMobile && (!window.solflare || !window.solflare.isSolflare)) {
+                const currentUrl = encodeURIComponent(window.location.href);
+                window.location.href = `https://solflare.com/ul/v1/browse/${currentUrl}?ref=${currentUrl}`;
+                return new Promise(() => {}); // Pause execution
+            }
+
+            // Normal connection for PC or inside Solflare App
             if (window.solflare) {
                 await window.solflare.connect();
                 return window.solflare.publicKey.toString();
             } else {
-                // MOBILE DEEP LINKING: Auto-redirect to Solflare App
-                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                if (isMobile) {
-                    const currentUrl = encodeURIComponent(window.location.href);
-                    window.location.href = `https://solflare.com/ul/v1/browse/${currentUrl}`;
-                    return new Promise(() => {});
-                } else {
-                    throw new Error("Solflare extension not found! Please install it.");
-                }
+                throw new Error("Solflare extension not found! Please install it.");
             }
         }
         return null;
@@ -98,11 +101,13 @@ export const connectWallet = async (walletType) => {
     } catch (err) {
         console.error("Connection Error:", err);
         if (typeof window.showSimplePopup === 'function') {
-            // Clean up the error message for better UI reading
-            let errorMsg = err.message;
-            if (errorMsg.includes("User rejected") || errorMsg.includes("User canceled")) {
-                errorMsg = "Connection request was cancelled by the user.";
+            let errorMsg = err.message || "Unknown error occurred.";
+            
+            // Translate generic Web3 rejection errors into readable game lore
+            if (errorMsg.includes("User rejected") || errorMsg.includes("canceled") || errorMsg.includes("not been authorized")) {
+                errorMsg = "Connection request was cancelled by the Pilot.";
             }
+            
             window.showSimplePopup("WALLET CONNECTION", errorMsg, "#ff4444");
         }
         return null;
@@ -184,7 +189,9 @@ export const payWithSOL = async (solAmount) => {
         console.error("SOL TX Error:", error);
         const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
         let msg = error.message;
-        if(msg.includes("User rejected")) msg = "Transaction aborted by Pilot.";
+        if(msg.includes("User rejected") || msg.includes("canceled") || msg.includes("not been authorized")) {
+            msg = "Transaction aborted by Pilot.";
+        }
         if (typeof window.showSimplePopup === 'function') window.showSimplePopup("TRANSACTION FAILED", msg, "#ff4444");
         return { success: false, message: msg };
     }
