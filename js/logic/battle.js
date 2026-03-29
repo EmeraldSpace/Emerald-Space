@@ -1,11 +1,12 @@
 /* =========================================
-   BATTLE & LEVELING LOGIC (SERVER-AUTHORITATIVE)
+   BATTLE & LEVELING LOGIC (SECURE MAINNET VERSION)
    ========================================= */
 
 import { supabase } from './state.js';
+import { generateItem } from './itemGenerator.js';
 
 export const attackMonster = async (playerStats, monster) => {
-    // 1. LOCAL SAFETY CHECK: Prevent API calls if the monster is already dead locally
+    // 1. Local check to prevent sending ghost attacks to server
     if (monster.currentHp !== undefined && monster.currentHp <= 0) {
         return { 
             damageDealt: 0, isCrit: false, monsterDamage: 0, 
@@ -15,16 +16,26 @@ export const attackMonster = async (playerStats, monster) => {
     }
 
     try {
-        // 2. SERVER-SIDE EXECUTION (NO CLIENT-SIDE RNG)
-        // The backend securely calculates dodge, crit, damage, and loot drops.
-        const { data, error } = await supabase.rpc('attack_monster', { 
-            p_monster_id: monster.id, 
-            p_player_stats: playerStats 
+        // 2. CALL REAL SUPABASE BACKEND (Tamper-proof execution)
+        const { data, error } = await supabase.rpc('secure_battle_calc', { 
+            p_stats: playerStats, 
+            p_monster: monster 
         });
 
         if (error) throw new Error(error.message);
 
-        // 3. RETURN SECURE SERVER RESULTS TO FRONTEND UI
+        // 3. Deduct HP locally so the UI updates smoothly
+        if (monster.currentHp === undefined) monster.currentHp = monster.hp;
+        monster.currentHp -= data.damage_dealt;
+
+        // 4. Secure Item Drop Generation
+        // The server dictates IF an item dropped and its rarity. 
+        // The client simply builds the item data based on that strict server rule.
+        let finalLootItem = null;
+        if (data.dropped_rarity) {
+            finalLootItem = generateItem(data.dropped_rarity);
+        }
+
         return {
             damageDealt: data.damage_dealt,
             isCrit: data.is_crit,
@@ -32,14 +43,16 @@ export const attackMonster = async (playerStats, monster) => {
             isKilled: data.is_killed,
             goldGained: data.gold_gained,
             xpGained: data.xp_gained,
-            lootItem: data.loot_item, // Backend returns the generated item JSON if dropped
+            lootItem: finalLootItem,
             lootOre: data.loot_ore,
             lootEnergy: data.loot_energy
         };
 
     } catch (err) {
-        console.error("Battle Server Error:", err);
-        // Fallback error handling to prevent UI crashes
+        console.error("Mainnet Battle Error:", err);
+        if (typeof window.showSimplePopup === 'function') {
+            window.showSimplePopup("SERVER ERROR", "Failed to connect to battle server.", "#ff4444");
+        }
         return { alreadyDead: true, error: true };
     }
 };
@@ -51,7 +64,6 @@ export const checkLevelUp = (profile, xpGained) => {
     let maxStamina = profile.maxStamina || 50;
     let leveledUp = false;
 
-    // Loop handles cases where a player gains enough XP to level up multiple times at once
     while (xp >= maxXp) {
         xp -= maxXp;
         level += 1;
