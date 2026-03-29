@@ -1,85 +1,115 @@
 /* =========================================
-   CRYPTO LOGIC - TON NETWORK (TMA OPTIMIZED)
+   CRYPTO LOGIC - SOLANA NETWORK (MAINNET READY)
    ========================================= */
 
 import { playSFX } from './audio.js';
 
-// === TON NETWORK SETTINGS ===
-// GANTI dengan alamat dompet TON Anda (Wallet penerima dana transaksi)
-const ADMIN_WALLET = 'UQCFs06is4MTGh_lOS7KsCkqvuR24bl5ypaWr6rampOM6B89'; 
+// Replace with your actual Solana project/treasury wallet
+const ADMIN_WALLET = 'ExNJ84TBmLsy7FB4duYteK5bWXEEuofSStPHCcA7TeQc'; 
+const NETWORK = 'https://mainnet.helius-rpc.com/?api-key=79850b9a-0b16-45cc-9ff8-b38375ea7d14';
 
-// Inisialisasi TON Connect UI
-export const tonConnectUI = new window.TON_CONNECT_UI.TonConnectUI({
-    manifestUrl: 'https://emerald-space.vercel.app/tonconnect-manifest.json',
-    buttonRootId: 'ton-connect-wrapper', // Menyuntikkan tombol ke HTML
-    uiPreferences: {
-        theme: 'DARK',      // Mengatur tema modal dompet agar gelap
-        zIndex: 999999      // [PERBAIKAN] Memaksa pop-up dompet tampil di layer PALING DEPAN
-    }
-});
 
-export const payWithTON = async (tonAmount) => {
+export let solanaConnection = null;
+export let connectedWalletAddress = null;
+
+// Initialize Web3 Connection
+if (window.solanaWeb3) {
+    solanaConnection = new window.solanaWeb3.Connection(NETWORK, 'confirmed');
+}
+
+/**
+ * FUNCTION: CONNECT SOLANA WALLET (Phantom / Solflare)
+ */
+export const connectSolanaWallet = async () => {
     playSFX('click');
     
     try {
-        if (!tonConnectUI.connected) {
+        const provider = window.solana || (window.phantom && window.phantom.solana);
+        
+        if (!provider || !provider.isPhantom) {
             if (typeof window.showSimplePopup === 'function') {
-                window.showSimplePopup("ACCESS DENIED", "Please connect your TON Wallet first!", "#ff4444");
+                window.showSimplePopup("WALLET NOT FOUND", "Please install Phantom or Solflare wallet!", "#ff4444");
             }
             return { success: false };
         }
 
-        // Konversi TON ke NanoTON (1 TON = 1,000,000,000 nanoTON)
-        const nanoTon = Math.floor(tonAmount * 1000000000).toString();
+        const resp = await provider.connect();
+        connectedWalletAddress = resp.publicKey.toString();
+        
+        return { success: true, address: connectedWalletAddress };
+    } catch (error) {
+        console.error("Wallet connection failed:", error);
+        return { success: false, message: error.message };
+    }
+};
 
-        const transaction = {
-            validUntil: Math.floor(Date.now() / 1000) + 300, // Valid untuk 5 menit
-            messages: [
-                {
-                    address: ADMIN_WALLET,
-                    amount: nanoTon
-                }
-            ]
-        };
+/**
+ * FUNCTION: PAY WITH SOLANA
+ */
+export const payWithSOL = async (solAmount) => {
+    playSFX('click');
+    
+    try {
+        const provider = window.solana || (window.phantom && window.phantom.solana);
+        
+        if (!provider || !connectedWalletAddress) {
+            if (typeof window.showSimplePopup === 'function') {
+                window.showSimplePopup("ACCESS DENIED", "Please connect your Solana Wallet first!", "#ff4444");
+            }
+            return { success: false };
+        }
 
         if (typeof window.showSimplePopup === 'function') {
             window.showSimplePopup(
                 "SECURE TRANSACTION", 
-                `Requesting Pilot's signature to transfer <strong style="color:#0098EA;">${tonAmount} TON</strong>...<br><span style="font-size:10px; color:#8b949e;">Awaiting wallet authorization via Telegram/Tonkeeper.</span>`, 
-                "#0098EA"
+                `Requesting Pilot's signature to transfer <strong style="color:#14F195;">${solAmount} SOL</strong>...<br><span style="font-size:10px; color:#8b949e;">Awaiting wallet authorization.</span>`, 
+                "#14F195"
             );
         }
 
-        // [FITUR BARU] Getaran Halus saat memanggil dompet (Khusus Telegram Web App)
+        // Haptic feedback for TMA
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
         }
 
-        // Kirim transaksi ke dompet pemain
-        const result = await tonConnectUI.sendTransaction(transaction);
+        const fromPubkey = new window.solanaWeb3.PublicKey(connectedWalletAddress);
+        const toPubkey = new window.solanaWeb3.PublicKey(ADMIN_WALLET);
+        const lamports = Math.floor(solAmount * window.solanaWeb3.LAMPORTS_PER_SOL);
+
+        const transaction = new window.solanaWeb3.Transaction().add(
+            window.solanaWeb3.SystemProgram.transfer({
+                fromPubkey,
+                toPubkey,
+                lamports
+            })
+        );
+
+        const { blockhash } = await solanaConnection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = fromPubkey;
+
+        const { signature } = await provider.signAndSendTransaction(transaction);
+        await solanaConnection.confirmTransaction(signature, 'confirmed');
+
+        const exist = document.getElementById('scifi-popup'); 
+        if(exist) exist.remove();
         
-        const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
-        
-        // [FITUR BARU] Getaran Sukses
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
         }
 
-        // Return success status so Shop UI can process item/gacha
-        return { success: true, signature: result.boc };
+        return { success: true, signature: signature };
 
     } catch (error) {
-        console.error("TON TX Error:", error);
-        const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
+        console.error("Solana TX Error:", error);
+        const exist = document.getElementById('scifi-popup'); 
+        if(exist) exist.remove();
         
-        // [FITUR BARU] Getaran Error/Batal
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
         }
 
         let msg = error.message || "Transaction aborted by Pilot.";
-        if (msg.includes("User rejects") || msg.includes("reject")) msg = "TON transaction aborted by Pilot.";
-        
         if (typeof window.showSimplePopup === 'function') {
             window.showSimplePopup("TRANSACTION FAILED", msg, "#ff4444");
         }
@@ -88,28 +118,19 @@ export const payWithTON = async (tonAmount) => {
 };
 
 /**
- * FUNCTION: CHECK TON BALANCE (FOR VIP MAP ACCESS)
+ * FUNCTION: CHECK SOL BALANCE (FOR VIP MAP ACCESS)
  */
-export const checkTonBalance = async () => {
+export const checkSolBalance = async () => {
     try {
-        if (!tonConnectUI.connected || !tonConnectUI.account) return 0;
+        if (!connectedWalletAddress || !solanaConnection) return 0;
 
-        const userAddress = tonConnectUI.account.address;
-
-        // Membaca saldo dari public API Toncenter
-        // Catatan Kapten: Jika game meledak ramai, kita mungkin perlu API Key dari @toncenter_bot
-        const response = await fetch(`https://toncenter.com/api/v2/getAddressBalance?address=${userAddress}`);
-        const data = await response.json();
-
-        if (data && data.ok) {
-            // Konversi NanoTON kembali ke TON
-            const tonBalance = parseInt(data.result) / 1000000000;
-            return tonBalance;
-        }
-        return 0;
+        const pubKey = new window.solanaWeb3.PublicKey(connectedWalletAddress);
+        const balance = await solanaConnection.getBalance(pubKey);
+        
+        return balance / window.solanaWeb3.LAMPORTS_PER_SOL;
         
     } catch (error) {
-        console.error("Failed to read TON balance sensor:", error);
+        console.error("Failed to read SOL balance sensor:", error);
         return 0;
     }
 };
