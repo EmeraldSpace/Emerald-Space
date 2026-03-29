@@ -102,12 +102,12 @@
             <input type="text" id="input-username" placeholder="ENTER PILOT NAME..." maxlength="12" style="width: 80%; padding: 15px; margin-bottom: 15px; background: #161b22; color: #fff; border: 1px solid var(--emerald); border-radius: 6px; text-align: center; font-weight: bold; font-size: 16px; text-transform: uppercase; outline: none;">
 
             <div id="wallet-section" style="margin-bottom: 25px; width: 80%;">
-                <!-- [UPDATE] Tombol berubah menjadi TON (Biru) -->
-                <button id="btn-open-wallet-popup" class="btn-half" style="width: 100%; border-radius: 6px; padding: 15px; font-size: 14px; background:rgba(0, 152, 234, 0.1); color: #0098EA; border: 2px solid #0098EA; font-weight:900;">
-                    CONNECT TON WALLET
+                
+                <button id="btn-open-wallet-popup" class="btn-half" style="width: 100%; border-radius: 6px; padding: 15px; font-size: 14px; background:rgba(20, 241, 149, 0.1); color: #14F195; border: 2px solid #14F195; font-weight:900;">
+                    CONNECT SOLANA WALLET
                 </button>
-                <div id="wallet-status" style="display: none; background: rgba(0, 152, 234, 0.1); border: 1px solid #0098EA; padding: 12px; border-radius: 6px;">
-                    <p style="color: #0098EA; font-size: 10px; font-weight: bold; margin-bottom: 4px; letter-spacing: 1px;">WALLET CONNECTED</p>
+                <div id="wallet-status" style="display: none; background: rgba(20, 241, 149, 0.1); border: 1px solid #14F195; padding: 12px; border-radius: 6px;">
+                    <p style="color: #14F195; font-size: 10px; font-weight: bold; margin-bottom: 4px; letter-spacing: 1px;">WALLET CONNECTED</p>
                     <p id="wallet-address-display" style="color: white; font-size: 14px; font-weight: 900; letter-spacing: 2px;">UQ...TeQc</p>
                 </div>
             </div>
@@ -208,7 +208,7 @@
     </div>
     
     <p style="color: #e6edf3; font-size: 11px; margin-top: 18px; line-height: 1.5; font-style: italic;">
-        "Prepare your fleet! The universe will expand to the TON Mainnet soon."
+        "Prepare your fleet! The universe will expand to the Solana Mainnet soon."
     </p>
 </div>
 
@@ -221,7 +221,7 @@
                     <span style="background:#ffca28; color:#000; font-size:10px; font-weight:bold; padding:4px 8px; border-radius:4px; letter-spacing: 1px;">STATUS: EARLY DEVELOPMENT (BETA)</span>
                     
                     <p style="color:#c9d1d9; font-size:12px; margin-top:15px; line-height:1.6; text-align:justify;">
-                        Welcome, Captain! This game is currently in its <b>Development Stage</b>. Our ultimate vision is to evolve <strong style="color:var(--emerald);">Emerald Space</strong> into a massive <strong>Fully On-Chain Sci-Fi RPG</strong> powered by <strong>TON Network</strong>. 
+                        Welcome, Captain! This game is currently in its <b>Development Stage</b>. Our ultimate vision is to evolve <strong style="color:var(--emerald);">Emerald Space</strong> into a massive <strong>Fully On-Chain Sci-Fi RPG</strong> powered by <strong>Solana Network</strong>. 
                         <br><br>
                         Prepare your fleet and hone your skills, because our grand launch sequence will be initiated soon! Thank you for being part of this galaxy's early history.
                     </p>
@@ -333,8 +333,8 @@
 
     <div style="background:#0d1117; padding:10px; border-radius:6px; border:1px solid #30363d; display:flex; justify-content:space-between; align-items:center; gap:10px;">
         <div style="flex:1; overflow:hidden;">
-            <span style="color:var(--emerald); font-weight:bold; font-size:11px;"> TON Donation ( FEED GAZA NOW ):</span><br>
-            <span id="donate-ton" style="display:block; word-break:break-all; color:#8b949e; font-size:11px; margin-top:3px;">UQCNbL6Zdd3jmPD0qz87MUcAihL0GkzobzNYsH59qh1NXvwq</span>
+            <span style="color:var(--emerald); font-weight:bold; font-size:11px;"> Solana Donation:</span><br>
+            <span id="donate-ton" style="display:block; word-break:break-all; color:#8b949e; font-size:11px; margin-top:3px;">ExNJ84TBmLsy7FB4duYteK5bWXEEuofSStPHCcA7TeQc</span>
         </div>
         <button onclick="window.copyAddress('donate-ton')" style="background:var(--emerald); color:#000; border:none; padding:8px 12px; border-radius:4px; font-weight:900; font-size:10px; cursor:pointer; flex-shrink:0;">
             COPY
@@ -408,28 +408,28 @@
 
     <div id="fx-layer"></div>
 
-    <!-- [UPDATE] WADAH KHUSUS TON CONNECT -->
+    <!-- [UPDATE] WADAH KHUSUS WALLET -->
     <div id="wallet-select-overlay" class="modal-overlay z-menu" style="display: none;">
-        <div class="modal-box" style="border-color: #0098EA; box-shadow: 0 0 30px rgba(0, 152, 234, 0.2);">
+        <div class="modal-box" style="border-color: #14F195; box-shadow: 0 0 30px rgba(20, 241, 149, 0.2);">
             
             <div style="display:flex; justify-content:center; margin-bottom:10px;">
-                <div style="background: rgba(0, 152, 234, 0.1); padding: 10px; border-radius: 50%; border: 1px solid #0098EA;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0098EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <div style="background: rgba(20, 241, 149, 0.1); padding: 10px; border-radius: 50%; border: 1px solid #14F195;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14F195" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                     </svg>
                 </div>
             </div>
 
-            <h3 class="modal-title" style="color:#0098EA; text-shadow: 0 0 10px rgba(0, 152, 234, 0.5);"> TON NETWORK </h3>
+            <h3 class="modal-title" style="color:#14F195; text-shadow: 0 0 10px rgba(20, 241, 149, 0.5);"> SOLANA NETWORK </h3>
             
             <div style="background: rgba(13, 17, 23, 0.8); border: 1px solid #30363d; border-radius: 6px; padding: 10px; margin-bottom: 15px; text-align: left;">
-                <p style="color: #0098EA; font-size: 11px; font-weight: bold; margin-bottom: 5px; display: flex; align-items: center; gap: 5px;">
-                    <span style="display:inline-block; width:6px; height:6px; background:#0098EA; border-radius:50%; box-shadow:0 0 5px #0098EA;"></span>
+                <p style="color: #14F195; font-size: 11px; font-weight: bold; margin-bottom: 5px; display: flex; align-items: center; gap: 5px;">
+                    <span style="display:inline-block; width:6px; height:6px; background:#14F195; border-radius:50%; box-shadow:0 0 5px #14F195;"></span>
                     SECURE CONNECTION
                 </p>
                 <p style="color: #8b949e; font-size: 10px; margin: 0; line-height: 1.4;">
-                    Connect your Telegram Wallet or Tonkeeper to sync your fleet data.
+                    Connect your Phantom or Solflare wallet to sync your fleet data.
                 </p>
             </div>
             
