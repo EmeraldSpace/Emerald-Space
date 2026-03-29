@@ -6,7 +6,8 @@ import { playSFX } from './audio.js';
 
 // === MAINNET SETTINGS ===
 // Highly recommended to change this NETWORK to a paid RPC (Helius/Quicknode) for official release
-// [UPDATE] Menggunakan Jalur Helius RPC untuk menghindari Error 403
+// [UPDATE] Using Helius RPC path to avoid 403 Errors. 
+// WARNING: For final production, move this RPC call to a secure backend to hide the API Key!
 const NETWORK = 'https://mainnet.helius-rpc.com/?api-key=79850b9a-0b16-45cc-9ff8-b38375ea7d14';
 const ADMIN_WALLET = 'ExNJ84TBmLsy7FB4duYteK5bWXEEuofSStPHCcA7TeQc'; // REPLACE WITH YOUR SOLANA WALLET!
 const PRIVY_APP_ID = 'cmnam2ras00gj0cl22pik3xih'; 
@@ -205,9 +206,14 @@ export const checkSolBalance = async () => {
  */
 export const checkEmrldBalance = async () => {
     try {
-        // <-- REPLACE WITH YOUR $EMRLD MINT ADDRESS! -->
-        const EMRLD_MINT_ADDRESS = 'YOUR_EMRLD_MINT_ADDRESS_HERE'; 
+        // [UPDATE] TBA: Token not yet officially launched. Kept empty to disable VIP gates safely.
+        const EMRLD_MINT_ADDRESS = ''; 
         
+        if (!EMRLD_MINT_ADDRESS) {
+            console.warn("System Notice: $EMRLD token contract is currently empty (TBA). Returning 0 balance.");
+            return 0; 
+        }
+
         const solanaWeb3 = window.solanaWeb3;
         let pubKey = null;
         
