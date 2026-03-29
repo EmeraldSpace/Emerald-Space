@@ -13,7 +13,7 @@ import { playSFX, playBGM, toggleBGM, toggleSFX } from './js/logic/audio.js';
 import { initStarfield } from './js/ui/starfield.js'; 
 import { connectSolanaWallet } from './js/logic/crypto.js'; 
 
-let connectedWalletAddress = null;
+export let connectedWalletAddress = null; // Di-export agar bisa diakses jika butuh dari file lain
 
 window.showSimplePopup = (title, message, color = "var(--emerald)") => {
     const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
@@ -254,14 +254,12 @@ const checkAccountSetup = () => {
 };
 
 // ==========================================
-// SOLANA CONNECT LISTENER
+// SOLANA CONNECT LISTENER (MULTI-WALLET POPUP)
 // ==========================================
 const btnOpenPopup = document.getElementById('btn-open-wallet-popup');
 const walletStatusDiv = document.getElementById('wallet-status');
 const walletAddressDisplay = document.getElementById('wallet-address-display');
-
 const walletOverlay = document.getElementById('wallet-select-overlay');
-if (walletOverlay) walletOverlay.style.display = 'none';
 
 if (btnOpenPopup) {
     btnOpenPopup.innerText = "CONNECT SOLANA WALLET";
@@ -269,64 +267,113 @@ if (btnOpenPopup) {
     btnOpenPopup.style.borderColor = "#14F195";
     btnOpenPopup.style.background = "rgba(20, 241, 149, 0.1)";
 
-    btnOpenPopup.onclick = async () => {
+    btnOpenPopup.onclick = () => {
         if(typeof playSFX === 'function') playSFX('click');
         
-        const result = await connectSolanaWallet();
-        
-        if (result.success) {
-            let currentWalletAddr = result.address;
+        if (walletOverlay) {
+            // Ubah gaya overlay agar bertema Solana
+            const modalBox = walletOverlay.querySelector('.modal-box');
+            if (modalBox) modalBox.style.borderColor = "#14F195";
             
-            const isRecovered = await checkAndRecoverWallet(currentWalletAddr);
-            if (isRecovered) {
-                window.showSimplePopup("ACCOUNT RECOVERED", "Old save data found! Restoring your fleet...", "#14F195");
-                setTimeout(() => window.location.reload(), 2000);
-                return; 
+            const title = walletOverlay.querySelector('.modal-title');
+            if (title) {
+                title.innerText = "SELECT WALLET";
+                title.style.color = "#14F195";
+                title.style.textShadow = "0 0 10px rgba(20, 241, 149, 0.5)";
             }
 
-            let inviterWallet = null;
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-                const startParam = window.Telegram.WebApp.initDataUnsafe.start_param;
-                if (startParam && startParam !== currentWalletAddr) {
-                    inviterWallet = startParam;
-                }
+            const wrapper = document.getElementById('ton-connect-wrapper');
+            if (wrapper) {
+                // Suntikkan tombol Phantom & Solflare
+                wrapper.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:12px; width:100%; margin-bottom:10px;">
+                        <button id="btn-phantom" style="width:100%; padding:14px; background:#17161a; color:#fff; border:1px solid #ab9ff2; border-radius:8px; font-weight:900; letter-spacing:1px; cursor:pointer; box-shadow:0 0 10px rgba(171, 159, 242, 0.2);">
+                            CONNECT PHANTOM
+                        </button>
+                        <button id="btn-solflare" style="width:100%; padding:14px; background:#1c170d; color:#fff; border:1px solid #ff7b00; border-radius:8px; font-weight:900; letter-spacing:1px; cursor:pointer; box-shadow:0 0 10px rgba(255, 123, 0, 0.2);">
+                            CONNECT SOLFLARE
+                        </button>
+                    </div>
+                `;
+                
+                document.getElementById('btn-phantom').onclick = () => handleWalletSelection('phantom');
+                document.getElementById('btn-solflare').onclick = () => handleWalletSelection('solflare');
             }
 
-            if (inviterWallet) {
-                await setReferrer(currentWalletAddr, inviterWallet);
-            }
-            
-            let myTelegramId = null;
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-                myTelegramId = window.Telegram.WebApp.initDataUnsafe.user.id.toString();
-            }
-
-            const state = getState();
-            updateState({ 
-                profile: { 
-                    ...state.profile, 
-                    walletAddress: currentWalletAddr,
-                    telegram_id: myTelegramId 
-                } 
-            });
-
-            btnOpenPopup.style.display = 'none';
-            if (walletStatusDiv) {
-                walletStatusDiv.style.display = 'block';
-                walletStatusDiv.style.borderColor = '#14F195';
-                walletStatusDiv.style.background = 'rgba(20, 241, 149, 0.1)';
-                walletStatusDiv.querySelector('p').style.color = '#14F195';
-            }
-
-            const shortAddress = currentWalletAddr.slice(0, 4) + '...' + currentWalletAddr.slice(-4);
-            
-            if (walletAddressDisplay) {
-                walletAddressDisplay.innerText = shortAddress;
-            }
-
-            window.showSimplePopup("SIGNAL SECURED", `Mainframe synced to Solana Wallet:<br><strong style="color:#14F195; word-break:break-all;">${shortAddress}</strong>`, "#14F195");
+            walletOverlay.style.display = 'flex';
         }
     };
+}
+
+const cancelSelectBtn = document.getElementById('btn-cancel-select');
+if (cancelSelectBtn) {
+    cancelSelectBtn.onclick = () => {
+        if(typeof playSFX === 'function') playSFX('click');
+        if (walletOverlay) walletOverlay.style.display = 'none';
+    };
+}
+
+async function handleWalletSelection(walletType) {
+    if(typeof playSFX === 'function') playSFX('click');
+    if (walletOverlay) walletOverlay.style.display = 'none';
+    
+    const result = await connectSolanaWallet(walletType);
+    
+    if (result.success) {
+        let currentWalletAddr = result.address;
+        
+        // FIX: Membuka kunci tombol Start
+        connectedWalletAddress = currentWalletAddr; 
+        
+        const isRecovered = await checkAndRecoverWallet(currentWalletAddr);
+        if (isRecovered) {
+            window.showSimplePopup("ACCOUNT RECOVERED", "Old save data found! Restoring your fleet...", "#14F195");
+            setTimeout(() => window.location.reload(), 2000);
+            return; 
+        }
+
+        let inviterWallet = null;
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
+            const startParam = window.Telegram.WebApp.initDataUnsafe.start_param;
+            if (startParam && startParam !== currentWalletAddr) {
+                inviterWallet = startParam;
+            }
+        }
+
+        if (inviterWallet) {
+            await setReferrer(currentWalletAddr, inviterWallet);
+        }
+        
+        let myTelegramId = null;
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+            myTelegramId = window.Telegram.WebApp.initDataUnsafe.user.id.toString();
+        }
+
+        const state = getState();
+        updateState({ 
+            profile: { 
+                ...state.profile, 
+                walletAddress: currentWalletAddr,
+                telegram_id: myTelegramId 
+            } 
+        });
+
+        if (btnOpenPopup) btnOpenPopup.style.display = 'none';
+        if (walletStatusDiv) {
+            walletStatusDiv.style.display = 'block';
+            walletStatusDiv.style.borderColor = '#14F195';
+            walletStatusDiv.style.background = 'rgba(20, 241, 149, 0.1)';
+            walletStatusDiv.querySelector('p').style.color = '#14F195';
+        }
+
+        const shortAddress = currentWalletAddr.slice(0, 4) + '...' + currentWalletAddr.slice(-4);
+        
+        if (walletAddressDisplay) {
+            walletAddressDisplay.innerText = shortAddress;
+        }
+
+        window.showSimplePopup("SIGNAL SECURED", `Mainframe synced to Solana Wallet:<br><strong style="color:#14F195; word-break:break-all;">${shortAddress}</strong>`, "#14F195");
+    }
 }
 
 const initGame = async () => {
