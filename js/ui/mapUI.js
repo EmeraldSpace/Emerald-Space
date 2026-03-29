@@ -1,18 +1,12 @@
 /* =========================================
-   MAP UI CONTROLLER - WEB3 & GLOBAL WORLD BOSS ($EMRLD VIP GATE)
+   MAP UI CONTROLLER - WEB3 & GLOBAL WORLD BOSS (TON NETWORK VERSION)
    ========================================= */
 import { MAP_DATA } from '../data/monsters.js';
-import { handleAttack } from './battleUI.js';
-import { getState, updateState } from '../logic/state.js'; 
+import { handleAttack, updateTopBar } from './battleUI.js'; // [ADDED] updateTopBar
+import { getState, updateState, supabase } from '../logic/state.js'; // [UPDATE] Import supabase dari state.js
 import { SHIPS } from '../data/ships.js'; 
 import { playSFX } from '../logic/audio.js'; 
-
-// [UPDATE] Import EMRLD balance checker function
-import { checkEmrldBalance } from '../logic/crypto.js'; 
-
-const SUPABASE_URL = 'https://ucoiceirejfvfshqcluq.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjb2ljZWlyZWpmdmZzaHFjbHVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NDMwNjIsImV4cCI6MjA4OTIxOTA2Mn0.kgCDbH5e6dvZLWm2b9FPXa51_AQq7-ZiHaD7GgpeICc';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+import { checkTonBalance } from '../logic/crypto.js'; 
 
 let currentSectorIndex = 0; 
 let mapTickInterval = null; 
@@ -26,30 +20,31 @@ export const initMap = async () => {
     
     const state = getState();
     const pLevel = state.profile.level || 1;
+    const pIsElite = state.profile.isElite === true; 
 
     container.innerHTML = `
         <div style="text-align:center; padding:60px 20px; animation: pulse 1.5s infinite;">
-            <h3 style="color:var(--emerald); margin-bottom:10px; font-size:18px; letter-spacing:2px;">
-                <img src="source/icon/sub/radar.png" style="width:22px; vertical-align:-3px; margin-right:8px;">SCANNING GALAXY...
+            <h3 style="color:#0098EA; margin-bottom:10px; font-size:18px; letter-spacing:2px; text-shadow:0 0 10px rgba(0,152,234,0.5);">
+                <img src="source/icon/sub/radar.png" style="width:22px; vertical-align:-3px; margin-right:8px; filter: drop-shadow(0 0 5px #0098EA);">SCANNING GALAXY...
             </h3>
-            <p style="color:#8b949e; font-size:12px;">Syncing Radar & Solana Wallet Signals</p>
+            <p style="color:#8b949e; font-size:12px;">Syncing Radar & TON Network Coordinates</p>
         </div>
     `;
 
-    // [UPDATE]: Fetch $EMRLD Balance from Blockchain
-    let emrldBalance = 0;
+    // Mengambil Saldo TON Pemain dari Blockchain
+    let tonBalance = 0;
     try {
-        if (typeof checkEmrldBalance === 'function') {
-            emrldBalance = await checkEmrldBalance();
-        }
+        tonBalance = await checkTonBalance();
     } catch (err) {
-        console.error("Failed to read $EMRLD balance:", err);
+        console.error("Gagal membaca saldo TON:", err);
     }
 
     let bossData = null;
     try {
-        const { data, error } = await supabase.from('global_bosses').select('*').eq('id', 1).single();
-        if (data && !error) bossData = data;
+        if (supabase) {
+            const { data, error } = await supabase.from('global_bosses').select('*').eq('id', 1).single();
+            if (data && !error) bossData = data;
+        }
     } catch (e) { console.error("Boss Radar Error:", e); }
 
     container.innerHTML = ''; 
@@ -59,19 +54,21 @@ export const initMap = async () => {
         const hpPercent = Math.max(0, (bossData.hp / bossData.max_hp) * 100);
         
         bossPanel.style.cssText = "border: 1px solid #ff4444; border-radius: 8px; margin-bottom: 20px; background: #161b22; padding: 15px; text-align: center; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(255, 68, 68, 0.2);";
+        
+        // [FIXED] Ganti fallback image ke icon warning untuk mencegah infinite loop
         bossPanel.innerHTML = `
             <div style="color: #ff4444; font-weight: 900; letter-spacing: 2px; font-size: 14px; margin-bottom: 8px; text-transform: uppercase;">
                 <img src="source/icon/sub/danger.png" style="width:16px; vertical-align:-2px; margin-right:6px;">
                 GLOBAL MMO RAID
                 <img src="source/icon/sub/danger.png" style="width:16px; vertical-align:-2px; margin-left:6px;">
             </div>
-            <img src="source/monster/monster11.png" onerror="this.src='source/monster/monster11.png'" style="height: 120px; object-fit: contain; filter: drop-shadow(0 0 20px rgba(255, 68, 68, 0.6)); margin-bottom: 10px; animation: float 3s ease-in-out infinite;">
+            <img src="source/monster/monster11.png" onerror="this.src='source/icon/sub/danger.png'" style="height: 120px; object-fit: contain; filter: drop-shadow(0 0 20px rgba(255, 68, 68, 0.6)); margin-bottom: 10px; animation: float 3s ease-in-out infinite;">
             <h3 style="color: #e6edf3; margin-bottom: 8px; font-size: 18px;">${bossData.name}</h3>
             <div style="font-size: 12px; color: #ffca28; margin-bottom: 5px; font-weight: bold;">SERVER HP: ${bossData.hp.toLocaleString()} / ${bossData.max_hp.toLocaleString()}</div>
             <div style="width: 100%; background: #0d1117; height: 8px; border-radius: 4px; margin-bottom: 15px; border: 1px solid #30363d; overflow:hidden;">
                 <div style="width: ${hpPercent}%; background: #ff4444; height: 100%; box-shadow: 0 0 10px #ff4444;"></div>
             </div>
-            <button id="btn-attack-boss" class="btn-action red mb-0" style="width: 100%; font-size:12px; padding:12px;">ENGAGE BOSS (-5 STAMINA)</button>
+            <button id="btn-attack-boss" class="btn-action red mb-0" style="width: 100%; font-size:12px; padding:12px;">ENGAGE BOSS (-2 STAMINA)</button>
         `;
         container.appendChild(bossPanel);
 
@@ -83,7 +80,7 @@ export const initMap = async () => {
                 const freshState = getState();
                 const curS = freshState.profile.stamina !== undefined ? freshState.profile.stamina : 50;
                 
-                if (curS < 5) return showMapWarning("WARNING", "Stamina Depleted! Wait for recovery or refill in Shop.");
+                if (curS < 2) return showMapWarning("WARNING", "Stamina Depleted! Wait for recovery.");
 
                 btnBoss.disabled = true;
                 btnBoss.innerText = 'FIRING MAIN CANNON...';
@@ -113,8 +110,8 @@ export const initMap = async () => {
 
                     if (response.error) {
                         console.error("Supabase RPC Error:", response.error);
-                        showMapWarning("SYSTEM ERROR", "Failed to contact central server!");
-                        btnBoss.disabled = false; btnBoss.innerText = 'ENGAGE BOSS (-5 STAMINA)'; btnBoss.style.opacity = '1';
+                        showMapWarning("SYSTEM ERROR", "Gagal menghubungi server pusat!");
+                        btnBoss.disabled = false; btnBoss.innerText = 'ENGAGE BOSS (-2 STAMINA)'; btnBoss.style.opacity = '1';
                         return;
                     }
 
@@ -129,12 +126,12 @@ export const initMap = async () => {
                     }
 
                     const playerImage = SHIPS && SHIPS[shipClass] ? SHIPS[shipClass].image : 'source/ships/ship1.png';
-                    const bossImage = 'monster11.png'; 
+                    const bossImage = 'source/monster/monster11.png'; // [FIXED] Path yang benar untuk boss image
 
                     showBossAnimation(playerImage, bossImage, dmg, bossCounterDamage, () => {
                         const up = { ...freshState.profile };
                         const goldReward = Math.floor(Math.random() * 1000) + 500; 
-                        up.gold += goldReward; up.stamina -= 5;
+                        up.gold += goldReward; up.stamina -= 2;
                         
                         if (up.currentHp === undefined) up.currentHp = maxHp;
                         up.currentHp -= bossCounterDamage;
@@ -148,16 +145,17 @@ export const initMap = async () => {
                             showMapWarning("RAID SUCCESS!", `You dealt <strong style="color:#2ecc71">${dmg.toLocaleString()} DAMAGE</strong>!<br>Leviathan counter-attacked for <strong style="color:#ff4444">${bossCounterDamage} DMG</strong>.<br>Reward: <strong style="color:var(--gold)">+${goldReward} G</strong>`);
                         }
 
+                        // [UPDATE PENTING] Simpan state lalu paksa Top Bar refresh!
                         updateState({ profile: up });
-                        const goldDisplay = document.getElementById('player-gold');
-                        if(goldDisplay) goldDisplay.innerText = up.gold.toLocaleString();
+                        updateTopBar(); // Pastikan stamina dan gold langsung berubah di layar
+                        
                         initMap(); 
                     });
 
                 } catch(e) {
                     console.error("Boss Raid Error:", e);
                     showMapWarning("CONNECTION LOST", "Failed to sync damage with server.");
-                    btnBoss.disabled = false; btnBoss.innerText = 'ENGAGE BOSS (-5 STAMINA)'; btnBoss.style.opacity = '1';
+                    btnBoss.disabled = false; btnBoss.innerText = 'ENGAGE BOSS (-2 STAMINA)'; btnBoss.style.opacity = '1';
                 }
             };
         }, 100); 
@@ -175,9 +173,10 @@ export const initMap = async () => {
     MAP_DATA.forEach((loc, index) => {
         const isVipMap = loc.reqToken ? true : false;
         
-        // [UPDATE]: Token Gating Logic with $EMRLD
         const isLevelLocked = pLevel < loc.minLevel;
-        const isEliteLocked = isVipMap && emrldBalance < 1000000; 
+        const hasCryptoAccess = tonBalance >= 100; 
+        
+        const isEliteLocked = isVipMap && !pIsElite && !hasCryptoAccess; 
         
         const isLocked = isLevelLocked || isEliteLocked; 
         const isOpen = !isLocked && index === currentSectorIndex;
@@ -192,7 +191,7 @@ export const initMap = async () => {
 
         let reqText = '';
         if (isVipMap) {
-            reqText = `<div class="map-req-text ${isLocked ? 'req-fail' : 'req-pass-vip'}">Req: Lv.${loc.minLevel} & 1M $EMRLD</div>`;
+            reqText = `<div class="map-req-text ${isLocked ? 'req-fail' : 'req-pass-vip'}">Req: Lv.${loc.minLevel} & (100 TON or Elite License)</div>`;
         } else {
             reqText = `<div class="map-req-text ${isLocked ? 'req-fail' : 'req-pass'}">Req: Lv.${loc.minLevel}</div>`;
         }
@@ -212,8 +211,7 @@ export const initMap = async () => {
                 if (isLevelLocked) {
                     showMapWarning("ACCESS DENIED", `This sector is too dangerous!<br><br>Required: <strong class="text-emerald">Level ${loc.minLevel}</strong><br>Your Level: <strong style="color:#ff4444;">${pLevel}</strong>`);
                 } else if (isEliteLocked) {
-                    // [UPDATE WARNING] Token Gating Message
-                    showMapWarning("VIP ACCESS DENIED", `Exclusive access for Token Holders!<br><br>To enter this sector, your Solana wallet must hold at least <strong style="color:var(--emerald);">1,000,000 $EMRLD</strong>.`);
+                    showMapWarning("ELITE ACCESS DENIED", `Exclusive access for Elite Pilots & Crypto Holders!<br><br>To enter this sector, you must hold at least <strong style="color:#0098EA;">100 TON</strong> in your wallet, OR purchase the <strong style="color:var(--gold);">Elite License</strong> from the INFO Terminal.`);
                 }
                 return; 
             }
@@ -252,7 +250,7 @@ export const initMap = async () => {
                 else if (loc.minLevel >= 10) { dropRarityText = '<span style="color:#3498db;">Com - Rare</span>'; } 
                 else if (loc.minLevel >= 5) { dropRarityText = '<span style="color:#2ecc71;">Com - Unc</span>'; }
 
-                let vipBonusText = enemy.isVip ? '<span style="color:#2ecc71; font-size:9px; margin-left:5px;">(+Drop Bonus)</span>' : '';
+                let vipBonusText = enemy.isVip ? '<span style="color:#2ecc71; font-size:9px; margin-left:5px;">(+Hit Bonus)</span>' : '';
                 let imgClass = `monster-img ${isDisabled ? 'disabled' : (enemy.isVip ? 'vip' : '')}`;
                 let imgContClass = `monster-img-container ${enemy.isVip ? 'vip' : ''}`;
                 let btnClass = `btn-battle ${isDisabled ? 'disabled' : (enemy.isVip ? 'vip' : 'normal')}`;
@@ -389,6 +387,7 @@ async function showBossAnimation(playerImgSrc, bossImgSrc, playerDmg, bossDmg, o
     overlay.className = 'cinematic-overlay';
     overlay.style.zIndex = '9999';
     
+    // [FIXED] Ganti fallback image di dalam pop-up sinematik jika gambar boss tidak ada
     overlay.innerHTML = `
         <div class="cinematic-box" style="border-color: #ff4444; box-shadow: 0 0 30px rgba(255,0,0,0.5);">
             <h3 class="cinematic-title" style="color: #ff4444;">ENGAGING LEVIATHAN...</h3>
@@ -401,7 +400,7 @@ async function showBossAnimation(playerImgSrc, bossImgSrc, playerDmg, bossDmg, o
                     <div id="dmg-monster-text" style="position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%); opacity: 0; font-weight: 900; font-size: 28px; color: #ff4444; text-shadow: 0 0 10px #000; transition: 0.2s;"></div>
                 </div>
                 
-                <img id="anim-monster" src="${bossImgSrc}" onerror="this.src='source/monster/monster11.png'" class="cinematic-ship" style="z-index: 2; width: 120px; filter: drop-shadow(0 0 15px red);">
+                <img id="anim-monster" src="${bossImgSrc}" onerror="this.src='source/icon/sub/danger.png'" class="cinematic-ship" style="z-index: 2; width: 120px; filter: drop-shadow(0 0 15px red);">
             </div>
             <div id="anim-log" class="cinematic-log">Target Locked...</div>
         </div>
