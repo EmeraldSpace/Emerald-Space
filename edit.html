@@ -289,14 +289,23 @@
                         </button>
                     </div>
 
-                    <!-- TOMBOL BAGS APP & JUPITER DENGAN LOGO RESMI -->
+                    <!-- TOMBOL BAGS APP & JUPITER DENGAN EFEK GLOW SAAT DIKLIK -->
+                    <style>
+                        .btn-trade-link {
+                            flex: 1; display: flex; justify-content: center; align-items: center;
+                            padding: 12px; border-radius: 6px; font-weight: 900; font-size: 12px;
+                            text-decoration: none; text-transform: uppercase; letter-spacing: 1px;
+                            transition: all 0.1s ease-in-out; box-shadow: none;
+                        }
+                        .btn-trade-bags { background: #14F195; color: #000; border: 1px solid #14F195; }
+                        .btn-trade-bags:active { box-shadow: 0 0 20px #14F195; transform: scale(0.95); }
+                        
+                        .btn-trade-jup { background: transparent; color: #14F195; border: 1px solid #14F195; }
+                        .btn-trade-jup:active { box-shadow: 0 0 20px rgba(20, 241, 149, 0.6), inset 0 0 10px rgba(20, 241, 149, 0.3); background: rgba(20, 241, 149, 0.1); transform: scale(0.95); }
+                    </style>
                     <div style="display:flex; gap:10px;">
-                        <a href="https://bags.app/" target="_blank" style="flex:1; display:flex; justify-content:center; align-items:center; background:#14F195; color:#000; padding:10px; border-radius:6px; font-weight:900; font-size:11px; text-decoration:none; box-shadow:0 0 10px rgba(20,241,149,0.3); transition:0.2s;">
-                            <img src="https://bags.app/favicon.ico" onerror="this.style.display='none'" style="width:14px; height:14px; margin-right:6px; filter: drop-shadow(0 0 2px rgba(0,0,0,0.2));"> BUY ON BAGS
-                        </a>
-                        <a href="https://jup.ag/" target="_blank" style="flex:1; display:flex; justify-content:center; align-items:center; background:transparent; border:1px solid #14F195; color:#14F195; padding:10px; border-radius:6px; font-weight:900; font-size:11px; text-decoration:none; transition:0.2s;">
-                            <img src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN/logo.png" onerror="this.src='https://jup.ag/favicon.ico'" style="width:14px; height:14px; margin-right:6px; border-radius:50%;"> BUY ON JUPITER
-                        </a>
+                        <a href="https://bags.app/" target="_blank" class="btn-trade-link btn-trade-bags">BUY ON BAGS</a>
+                        <a href="https://jup.ag/" target="_blank" class="btn-trade-link btn-trade-jup">BUY ON JUPITER</a>
                     </div>
                 </div>
                 <!-- ============================================================== -->
