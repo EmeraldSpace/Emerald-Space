@@ -11,7 +11,7 @@ import { initShop } from './js/ui/shopUI.js';
 import { updateTopBar as battleUpdateTopBar } from './js/ui/battleUI.js';
 import { playSFX, playBGM, toggleBGM, toggleSFX } from './js/logic/audio.js';
 import { initStarfield } from './js/ui/starfield.js'; 
-import { connectSolanaWallet } from './js/logic/crypto.js'; 
+import { connectSolanaWallet, payWithSOL, payWithEMRLD } from './js/logic/crypto.js'; 
 
 export let connectedWalletAddress = null;
 
@@ -427,7 +427,6 @@ const initAbout = async () => {
             const state = getState();
             let playerId = state.profile.walletAddress || "PLEASE_CONNECT_WALLET_FIRST";
 
-            // UBAH JADI LINK WEBSITE MURNI
             const refLink = `https://emerald-space.site/?ref=${playerId}`;
 
             const overlay = document.createElement('div');
@@ -587,7 +586,6 @@ const initAbout = async () => {
                 if(typeof playSFX === 'function') playSFX('click');
                 const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
                 
-                // [UPDATE] Harga Elite License diubah menjadi 25.000.000
                 const upgradeCost = 25000000; 
                 
                 const overlay = document.createElement('div'); 
@@ -898,7 +896,6 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
     const btnClaimGacha = document.getElementById('btn-claim-gacha');
 
     // [NEW] Selectors for the Virtual Wallet Display
-    const shopVEmrldDisplay = document.getElementById('shop-vembrld');
     const shopVSolDisplay = document.getElementById('shop-vsol');
 
     let isReadyToSpin = false;
@@ -914,7 +911,6 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
     let costInEmrld = 20; 
 
     // [NEW] Virtual Balances (Initialized from State later)
-    let virtualEmrldBalance = 100; // Simulated starting balance for testing
     let virtualSolBalance = 0;
 
     let systemProfitPoolUsd = 0; 
@@ -934,15 +930,12 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
 
     // [NEW] Function to update the virtual wallet UI in the Shop
     function updateVirtualWalletUI() {
-        if (shopVEmrldDisplay) shopVEmrldDisplay.innerText = virtualEmrldBalance.toFixed(2);
         if (shopVSolDisplay) shopVSolDisplay.innerText = virtualSolBalance.toFixed(4);
     }
 
     // [NEW] Sync virtual balances with the central game state
     function syncVirtualBalancesWithState() {
         const state = getState();
-        // Assuming we will add virtualEmrld and virtualSol to the profile state later
-        virtualEmrldBalance = state.profile.virtualEmrld || 100; // Defaulting to 100 for testing
         virtualSolBalance = state.profile.virtualSol || 0;
         updateVirtualWalletUI();
     }
@@ -992,36 +985,38 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
     }
     fetchRealTimePrices();
 
-    // [UPDATED] simulateTransaction now checks and deducts from Virtual EMRLD Balance
+    // [ON-CHAIN] TRIGGER MAINNET PAYMENT VIA PHANTOM (MENGGUNAKAN EMRLD)
     async function simulateTransaction() {
         if (isReadyToSpin || isProcessing) return;
-        
-        // Check if player has enough Virtual EMRLD
-        if (virtualEmrldBalance < costInEmrld) {
-             window.showSimplePopup("INSUFFICIENT V-EMRLD", `You need ${costInEmrld} V-EMRLD to spin. Please acquire more.`, "#ff4444");
-             return;
-        }
 
         isProcessing = true;
-        
         tierBtns.forEach(b => b.disabled = true);
         
         coinSlot.classList.remove('pulse-glow');
-        coinSlot.style.borderColor = "#fff";
-        coinSlot.querySelector('.pay-label').style.color = "#fff";
-        statusText.innerText = `DEDUCTING ${costInEmrld} V-EMRLD...`;
-        statusText.style.color = "#fff";
+        coinSlot.style.borderColor = "#14F195";
+        coinSlot.querySelector('.pay-label').style.color = "#14F195";
         
-        // Deduct Virtual EMRLD
-        virtualEmrldBalance -= costInEmrld;
-        
-        // Update State and UI
-        const currentState = getState();
-        updateState({ profile: { ...currentState.profile, virtualEmrld: virtualEmrldBalance } });
-        updateVirtualWalletUI();
+        statusText.innerText = `AWAITING SIGNATURE... (${costInEmrld} EMRLD)`;
+        statusText.style.color = "#14F195";
+        statusText.style.textShadow = "0 0 10px #14F195";
 
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Shorter simulated delay since it's off-chain
-        
+        if(typeof playSFX === 'function') playSFX('click');
+
+        // WEB3 TRANSACTION CALL (Memotong EMRLD token)
+        const tx = await payWithEMRLD(parseFloat(costInEmrld));
+
+        if (!tx || !tx.success) {
+            statusText.innerText = "TRANSACTION REJECTED OR FAILED";
+            statusText.style.color = "#ff4444";
+            statusText.style.textShadow = "none";
+            coinSlot.style.borderColor = "#fff";
+            coinSlot.querySelector('.pay-label').style.color = "#fff";
+            isProcessing = false;
+            tierBtns.forEach(b => b.disabled = false);
+            return;
+        }
+
+        // IF TRANSACTION SUCCESS, UNLOCK THE GACHA KNOB
         systemProfitPoolUsd += currentSpinCostUsd; 
 
         isProcessing = false;
@@ -1030,7 +1025,7 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
         coinSlot.style.borderColor = "#333";
         coinSlot.querySelector('.pay-label').style.color = "#555";
         
-        statusText.innerText = "CREDIT ACCEPTED. PULL LEVER.";
+        statusText.innerText = "PAYMENT VERIFIED. PULL LEVER.";
         statusText.style.color = "#00f3ff";
         statusText.style.textShadow = "0 0 10px #00f3ff";
         
