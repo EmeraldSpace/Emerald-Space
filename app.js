@@ -587,7 +587,8 @@ const initAbout = async () => {
                 if(typeof playSFX === 'function') playSFX('click');
                 const exist = document.getElementById('scifi-popup'); if(exist) exist.remove();
                 
-                const upgradeCost = 75000000; 
+                // [UPDATE] Harga Elite License diubah menjadi 25.000.000
+                const upgradeCost = 25000000; 
                 
                 const overlay = document.createElement('div'); 
                 overlay.id = 'scifi-popup'; 
@@ -896,6 +897,10 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
     const tierBtns = document.querySelectorAll('.tier-btn');
     const btnClaimGacha = document.getElementById('btn-claim-gacha');
 
+    // [NEW] Selectors for the Virtual Wallet Display
+    const shopVEmrldDisplay = document.getElementById('shop-vembrld');
+    const shopVSolDisplay = document.getElementById('shop-vsol');
+
     let isReadyToSpin = false;
     let isProcessing = false;
 
@@ -908,13 +913,11 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
     let currentSolPrice = 145.00; 
     let costInEmrld = 20; 
 
-    let totalBurnedEmrld = 0;   
-    let totalTreasuryEmrld = 0; 
-    let systemProfitPoolUsd = 0; 
+    // [NEW] Virtual Balances (Initialized from State later)
+    let virtualEmrldBalance = 100; // Simulated starting balance for testing
+    let virtualSolBalance = 0;
 
-    // [NEW] Admin Treasury Liquidity (Simulated for Frontend)
-    // In production, fetch this from the actual Admin Wallet balance via RPC
-    let adminSolBalance = 0.5; // Example: Admin has 0.5 SOL left
+    let systemProfitPoolUsd = 0; 
 
     // [UPDATED] Prizes now represent pure SOL drops. Image paths updated.
     const prizes = [
@@ -929,27 +932,19 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
         { name: "GALACTIC JACKPOT", color: "#ffffff", rarity: "MYTHIC", img: "source/icon/ball/ball9.png", weight: 1, payoutUsd: 5.00 }
     ];
 
-    // [NEW] Function to verify if Admin Wallet has enough SOL to pay the highest possible prize
-    function checkTreasuryLiquidity() {
-        const maxPossiblePrizeUsd = Math.max(...prizes.map(p => p.payoutUsd)) * currentSpinCostUsd;
-        const maxPossiblePrizeSol = maxPossiblePrizeUsd / currentSolPrice;
+    // [NEW] Function to update the virtual wallet UI in the Shop
+    function updateVirtualWalletUI() {
+        if (shopVEmrldDisplay) shopVEmrldDisplay.innerText = virtualEmrldBalance.toFixed(2);
+        if (shopVSolDisplay) shopVSolDisplay.innerText = virtualSolBalance.toFixed(4);
+    }
 
-        if (adminSolBalance < maxPossiblePrizeSol) {
-            // Lock the machine if liquidity is critically low
-            statusText.innerText = "TREASURY DEPLETED. AWAITING SOL REFILL...";
-            statusText.style.color = "#ff4444";
-            statusText.style.textShadow = "0 0 10px #ff4444";
-            
-            coinSlot.classList.remove('pulse-glow');
-            coinSlot.style.borderColor = "#ff4444";
-            coinSlot.style.pointerEvents = "none"; // Disable clicking
-            
-            knob.classList.add('disabled-knob');
-            tierBtns.forEach(btn => btn.disabled = true);
-            
-            return false;
-        }
-        return true;
+    // [NEW] Sync virtual balances with the central game state
+    function syncVirtualBalancesWithState() {
+        const state = getState();
+        // Assuming we will add virtualEmrld and virtualSol to the profile state later
+        virtualEmrldBalance = state.profile.virtualEmrld || 100; // Defaulting to 100 for testing
+        virtualSolBalance = state.profile.virtualSol || 0;
+        updateVirtualWalletUI();
     }
 
     function initBalls() {
@@ -969,9 +964,6 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
         costInEmrld = (currentSpinCostUsd / currentEmrldPrice).toFixed(2);
         const payLabel = document.querySelector('.pay-label');
         if (payLabel) payLabel.innerText = `${costInEmrld} EMRLD`;
-        
-        // Check liquidity every time the tier cost changes
-        checkTreasuryLiquidity();
     }
 
     tierBtns.forEach(btn => {
@@ -996,11 +988,20 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
             console.log("Using simulated API prices.");
         }
         updateCostUI();
+        syncVirtualBalancesWithState(); // Sync initially
     }
     fetchRealTimePrices();
 
+    // [UPDATED] simulateTransaction now checks and deducts from Virtual EMRLD Balance
     async function simulateTransaction() {
         if (isReadyToSpin || isProcessing) return;
+        
+        // Check if player has enough Virtual EMRLD
+        if (virtualEmrldBalance < costInEmrld) {
+             window.showSimplePopup("INSUFFICIENT V-EMRLD", `You need ${costInEmrld} V-EMRLD to spin. Please acquire more.`, "#ff4444");
+             return;
+        }
+
         isProcessing = true;
         
         tierBtns.forEach(b => b.disabled = true);
@@ -1008,23 +1009,20 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
         coinSlot.classList.remove('pulse-glow');
         coinSlot.style.borderColor = "#fff";
         coinSlot.querySelector('.pay-label').style.color = "#fff";
-        statusText.innerText = `PAYING ${costInEmrld} $EMRLD...`;
+        statusText.innerText = `DEDUCTING ${costInEmrld} V-EMRLD...`;
         statusText.style.color = "#fff";
         
-        await new Promise(resolve => setTimeout(resolve, 2000)); 
+        // Deduct Virtual EMRLD
+        virtualEmrldBalance -= costInEmrld;
         
-        const burnedAmount = costInEmrld * 0.5;
-        const treasuryAmount = costInEmrld * 0.5;
-        totalBurnedEmrld += burnedAmount;
-        totalTreasuryEmrld += treasuryAmount;
-        systemProfitPoolUsd += currentSpinCostUsd; 
+        // Update State and UI
+        const currentState = getState();
+        updateState({ profile: { ...currentState.profile, virtualEmrld: virtualEmrldBalance } });
+        updateVirtualWalletUI();
 
-        console.log(`--- SYSTEM ECONOMY REPORT ---`);
-        console.log(`Ticket Price: $${currentSpinCostUsd}`);
-        console.log(`🔥 Burned: ${totalBurnedEmrld.toFixed(2)} EMRLD`);
-        console.log(`🏦 Treasury: ${totalTreasuryEmrld.toFixed(2)} EMRLD`);
-        console.log(`💰 Sytem Profit Pool:$${systemProfitPoolUsd.toFixed(2)}`);
-        console.log(`-----------------------------`);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Shorter simulated delay since it's off-chain
+        
+        systemProfitPoolUsd += currentSpinCostUsd; 
 
         isProcessing = false;
         isReadyToSpin = true;
@@ -1032,7 +1030,7 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
         coinSlot.style.borderColor = "#333";
         coinSlot.querySelector('.pay-label').style.color = "#555";
         
-        statusText.innerText = "TX CONFIRMED. PULL LEVER.";
+        statusText.innerText = "CREDIT ACCEPTED. PULL LEVER.";
         statusText.style.color = "#00f3ff";
         statusText.style.textShadow = "0 0 10px #00f3ff";
         
@@ -1088,7 +1086,7 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
             machineBody.classList.add('shake-animation');
             knob.classList.add('rotate-knob');
             
-            statusText.innerText = "EXTRACTING MATTER...";
+            statusText.innerText = "EXTRACTING YIELD...";
             statusText.style.color = "#ff00ea";
             statusText.style.textShadow = "0 0 10px #ff00ea";
 
@@ -1111,7 +1109,7 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
             setTimeout(() => {
                 machineBody.classList.remove('shake-animation');
                 knob.classList.remove('rotate-knob');
-                statusText.innerText = "ITEM READY FOR RETRIEVAL";
+                statusText.innerText = "YIELD READY FOR RETRIEVAL";
                 
                 const winPrize = getDynamicPrize();
                 
@@ -1154,14 +1152,17 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
         }
     }
 
+    // [UPDATED] showPrize now updates the Virtual SOL balance
+    let currentWonSolAmount = 0;
+    
     function showPrize(win) {
         rewardImage.src = win.img;
         rewardImage.style.filter = `drop-shadow(0 0 20px ${win.color})`;
 
-        let wonSol = (win.actualPayoutUsd / currentSolPrice).toFixed(4); 
+        currentWonSolAmount = parseFloat((win.actualPayoutUsd / currentSolPrice).toFixed(4)); 
         
         let prizeColor = win.actualPayoutUsd < currentSpinCostUsd ? "#f1c40f" : "#4ade80"; 
-        let prizeMessage = `+ ${wonSol} SOL ($${win.actualPayoutUsd.toFixed(2)})`;
+        let prizeMessage = `+ ${currentWonSolAmount} SOL ($${win.actualPayoutUsd.toFixed(2)})`;
 
         rewardText.innerHTML = `<span style="font-size: 0.8rem; color: #888; font-family: 'Orbitron', sans-serif;">[CLASS: ${win.rarity}]</span><br>
         <b style="color:${win.color}; font-size:1.8rem; text-shadow: 0 0 20px ${win.color}; text-transform: uppercase;">${win.name}</b><br>
@@ -1174,11 +1175,28 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
         modalContent.querySelector('.hologram-title').style.color = win.color;
         modalContent.querySelector('.hologram-title').style.textShadow = `0 0 15px ${win.color}`;
         
+        // Change button text to reflect adding to virtual balance
+        btnClaimGacha.innerText = "ADD TO V-SOL BALANCE";
+
         gachaModal.style.display = 'flex';
         createExplosion(win.color);
     }
 
+    // [UPDATED] closeModal handles adding the won SOL to the virtual balance
     function closeModal() {
+        if(typeof playSFX === 'function') playSFX('craftSuccess');
+
+        // Add the won amount to Virtual SOL
+        virtualSolBalance += currentWonSolAmount;
+        
+        // Update State and UI
+        const currentState = getState();
+        updateState({ profile: { ...currentState.profile, virtualSol: virtualSolBalance } });
+        updateVirtualWalletUI();
+        
+        window.showSimplePopup("YIELD SECURED", `${currentWonSolAmount} V-SOL has been added to your secure wallet.`, "#14F195");
+        currentWonSolAmount = 0; // Reset
+
         gachaModal.style.display = 'none';
         isProcessing = false;
         
@@ -1202,6 +1220,25 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
     // Attach event listener to the claim button
     if (btnClaimGacha) {
         btnClaimGacha.addEventListener('click', closeModal);
+    }
+
+    // [NEW] Event Listener for Withdraw Button
+    const btnWithdrawVsol = document.getElementById('btn-withdraw-vsol');
+    if (btnWithdrawVsol) {
+        btnWithdrawVsol.addEventListener('click', () => {
+            if(typeof playSFX === 'function') playSFX('click');
+            if(virtualSolBalance <= 0) {
+                 window.showSimplePopup("NO YIELD", "Your V-SOL balance is empty.", "#ff4444");
+                 return;
+            }
+            window.showSimplePopup("WITHDRAWAL REQUEST", `A request to withdraw ${virtualSolBalance.toFixed(4)} SOL has been sent to the network. Processing may take up to 24 hours.`, "#3498db");
+            // In a real app, this would trigger an API call to log the withdrawal request
+            // For now, we simulate clearing the balance after a request
+            virtualSolBalance = 0;
+            const currentState = getState();
+            updateState({ profile: { ...currentState.profile, virtualSol: virtualSolBalance } });
+            updateVirtualWalletUI();
+        });
     }
 
     // Initialize the gacha balls
