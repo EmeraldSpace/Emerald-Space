@@ -7,12 +7,12 @@ import { generateItem } from './itemGenerator.js';
 
 export const SHOP_ITEMS = {
     // === GOLD PURCHASE PACKAGES USING SOLANA ===
-    SOL_1: { name: "100,000 Gold", price: 0.05, reward: 100000, isSOL: true, image: "source/item/gold.png", description: "Buy 100,000 Gold for 0.05 SOL." },
-    SOL_5: { name: "550,000 Gold", price: 0.25, reward: 550000, isSOL: true, image: "source/item/gold.png", description: "Buy 550,000 Gold for 0.25 SOL. (10% Bonus)" },
-    SOL_10: { name: "1,200,000 Gold", price: 0.5, reward: 1200000, isSOL: true, image: "source/item/gold.png", description: "Buy 1.2M Gold for 0.5 SOL. (20% Bonus)" },
-    SOL_25: { name: "3,250,000 Gold", price: 1.25, reward: 3250000, isSOL: true, image: "source/item/gold.png", description: "Buy 3.25M Gold for 1.25 SOL. (30% Bonus)" },
-    SOL_100: { name: "15,000,000 Gold", price: 5.0, reward: 15000000, isSOL: true, image: "source/item/gold.png", description: "Buy 15M Gold for 5.0 SOL. (50% Bonus)" },
-    SOL_1000: { name: "200,000,000 Gold", price: 50.0, reward: 200000000, isSOL: true, image: "source/item/gold.png", description: "Buy 200M Gold for 50.0 SOL. (100% Bonus)" },
+    // Ratio: 1 SOL = 50,000,000 Gold
+    SOL_STARTER: { name: "STARTER PACK", price: 0.05, reward: 2500000, isSOL: true, image: "source/item/gold.png", description: "Get 2,500,000 Gold instantly for 0.05 SOL." },
+    SOL_CAPTAIN: { name: "CAPTAIN PACK", price: 0.10, reward: 5000000, isSOL: true, image: "source/item/gold.png", description: "Get 5,000,000 Gold instantly for 0.10 SOL." },
+    SOL_COMMANDER: { name: "COMMANDER PACK", price: 0.25, reward: 12500000, isSOL: true, image: "source/item/gold.png", description: "Get 12,500,000 Gold instantly for 0.25 SOL." },
+    SOL_ADMIRAL: { name: "ADMIRAL PACK", price: 0.50, reward: 25000000, isSOL: true, image: "source/item/gold.png", description: "Get 25,000,000 Gold instantly for 0.50 SOL." },
+    SOL_EMPEROR: { name: "EMPEROR PACK", price: 1.00, reward: 50000000, isSOL: true, image: "source/item/gold.png", description: "Massive wealth! Get 50,000,000 Gold for 1.00 SOL." },
     
     // === NORMAL ITEMS USING GOLD ===
     STAMINA_REFILL: { name: "Stamina Refill", price: 200, image: "source/icon/stamina.png", description: "Instantly restores stamina to maximum." },
