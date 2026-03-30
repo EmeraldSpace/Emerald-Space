@@ -1,5 +1,5 @@
 /* =========================================
-   GLOBAL STATE MANAGEMENT - SOLANA NETWORK SYNC (V5.3)
+   GLOBAL STATE MANAGEMENT - SOLANA NETWORK SYNC (V5.4)
    ========================================= */
 
 export const SHIPS = {
@@ -16,10 +16,11 @@ export const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON
 export const initialState = {
     profile: {
         level: 1, xp: 0, gold: 10000, iron_ore: 0, dark_energy: 0, 
+        virtualSol: 0, virtualEmrld: 0, emrldBalance: 0, // [NEW] VIRTUAL WALLET & TOKEN HOLDINGS
         shipClass: 'INTERCEPTOR', isElite: false,
         stamina: 50, maxStamina: 50, currentHp: 200, walletAddress: null,
-        telegram_id: null, // Properti baru untuk Telegram ID
-        referred_by: null  // Properti baru untuk ID pengundang
+        telegram_id: null, 
+        referred_by: null  
     },
     inventory: [],
     equipped: { weapon: null, hull: null, shield: null, engine: null, cpu: null },
@@ -35,7 +36,7 @@ let pendingInventorySync = false;
 
 export const getState = () => currentState;
 
-// --- 1. PULL DATA ---
+// --- 1. PULL DATA FROM SERVER ---
 export const loadStateFromServer = async (walletAddress) => {
     currentUserAddress = walletAddress;
     try {
@@ -61,6 +62,9 @@ export const loadStateFromServer = async (walletAddress) => {
                 gold: profile.gold ?? 0,
                 iron_ore: profile.iron_ore ?? 0,
                 dark_energy: profile.dark_energy ?? 0,
+                virtualSol: profile.virtual_sol ?? 0, // [NEW] PULL V-SOL
+                virtualEmrld: profile.virtual_emrld ?? 0, // [NEW] PULL V-EMRLD
+                emrldBalance: profile.emrld_balance ?? 0, // [NEW] PULL REAL TOKEN BALANCE
                 stamina: profile.stamina ?? 50,
                 maxStamina: profile.max_stamina ?? 50,
                 currentHp: profile.current_hp ?? 200,
@@ -98,7 +102,7 @@ export const loadStateFromServer = async (walletAddress) => {
     }
 };
 
-// --- 2. PUSH DATA ---
+// --- 2. PUSH DATA TO SERVER ---
 export const updateState = (newData) => {
     currentState = { ...currentState, ...newData };
     localStorage.setItem('EMERALD_SPACE_SAVE_V5', JSON.stringify(currentState));
@@ -130,6 +134,9 @@ const syncProfile = async (p) => {
             gold: p.gold ?? currentState.profile.gold,
             iron_ore: p.iron_ore ?? currentState.profile.iron_ore,
             dark_energy: p.dark_energy ?? currentState.profile.dark_energy,
+            virtual_sol: p.virtualSol ?? currentState.profile.virtualSol, // [NEW] PUSH V-SOL
+            virtual_emrld: p.virtualEmrld ?? currentState.profile.virtualEmrld, // [NEW] PUSH V-EMRLD
+            emrld_balance: p.emrldBalance ?? currentState.profile.emrldBalance, // [NEW] PUSH REAL TOKEN BALANCE
             current_hp: p.currentHp ?? currentState.profile.currentHp,
             stamina: p.stamina ?? currentState.profile.stamina,
             max_stamina: p.maxStamina ?? currentState.profile.maxStamina,
