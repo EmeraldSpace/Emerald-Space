@@ -7,7 +7,7 @@ import { MAP_DATA } from '../data/monsters.js';
 /**
  * Location Transition Logic (Warp Drive)
  */
-export const travelToLocation = (locationId, player, currentSolBalance = 0) => {
+export const travelToLocation = (locationId, player, currentEmrldBalance = 0) => {
     const targetMap = MAP_DATA.find(m => m.id === locationId) || MAP_DATA[locationId];
 
     // Failsafe if coordinates are not found
@@ -26,14 +26,17 @@ export const travelToLocation = (locationId, player, currentSolBalance = 0) => {
         };
     }
 
-    // 2. Special Map Requirement Validation (Web3 Token)
+    // 2. Special Map Requirement Validation (Web3 Token & Elite Status)
     const isVipMap = targetMap.reqToken ? true : false;
-    const reqAmount = 0.5; // Synced to 0.5 SOL to match realistic Solana requirements
+    const reqAmount = 100000; // Synced to 100,000 EMRLD
 
-    if (isVipMap && currentSolBalance < reqAmount) {
+    // Check if player lacks both Elite License AND sufficient EMRLD
+    const isEliteLocked = isVipMap && !player.isElite && currentEmrldBalance < reqAmount;
+
+    if (isEliteLocked) {
         return { 
             success: false, 
-            message: `🔒 Restricted Area! Sensors detect insufficient Web3 balance. Requires at least ${reqAmount} SOL.` 
+            message: `🔒 Restricted Area! Sensors detect insufficient clearance. Requires Elite License or at least ${reqAmount.toLocaleString()} EMRLD.` 
         };
     }
 
@@ -55,18 +58,18 @@ export const getMapMonsters = (locationId) => {
 /**
  * Check if a location is locked (SYNCED WITH mapUI.js)
  */
-export const checkMapAccess = (map, player, currentSolBalance = 0) => {
+export const checkMapAccess = (map, player, currentEmrldBalance = 0) => {
     const levelLocked = player.level < map.minLevel;
     
-    // VIP Requirement: If there is reqToken in monster data
+    // VIP Requirement: Elite License OR 100k EMRLD
     const isVipMap = map.reqToken ? true : false;
-    const reqAmount = 0.5; // Synced to 0.5 SOL
+    const reqAmount = 100000; 
     
-    const tokenLocked = isVipMap && currentSolBalance < reqAmount;
+    const isEliteLocked = isVipMap && !player.isElite && currentEmrldBalance < reqAmount;
     
     return {
-        isLocked: levelLocked || tokenLocked,
+        isLocked: levelLocked || isEliteLocked,
         // UI Text updated for smaller screen fitting
-        reason: levelLocked ? `Lv. ${map.minLevel} Req.` : (tokenLocked ? `${reqAmount} SOL Req.` : "")
+        reason: levelLocked ? `Lv. ${map.minLevel} Req.` : (isEliteLocked ? `100k EMRLD Req.` : "")
     };
 };
