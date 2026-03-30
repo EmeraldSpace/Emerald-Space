@@ -912,17 +912,45 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
     let totalTreasuryEmrld = 0; 
     let systemProfitPoolUsd = 0; 
 
+    // [NEW] Admin Treasury Liquidity (Simulated for Frontend)
+    // In production, fetch this from the actual Admin Wallet balance via RPC
+    let adminSolBalance = 0.5; // Example: Admin has 0.5 SOL left
+
+    // [UPDATED] Prizes now represent pure SOL drops. Image paths updated.
     const prizes = [
-        { name: "SOLANA SPHERE V1", color: "#a8b5c2", rarity: "COMMON", img: "source/ball/ball1.png", weight: 20, payoutUsd: 0.25 },
-        { name: "SPACE JUNK", color: "#a8b5c2", rarity: "COMMON", img: "source/ball/ball2.png", weight: 20, payoutUsd: 0.25 },
-        { name: "ASTEROID ROCK", color: "#a8b5c2", rarity: "COMMON", img: "source/ball/ball3.png", weight: 20, payoutUsd: 0.25 },
-        { name: "NEBULA COIN", color: "#ffd700", rarity: "UNCOMMON", img: "source/ball/ball4.png", weight: 15, payoutUsd: 0.50 },
-        { name: "PLASMA ORB", color: "#ff00ea", rarity: "UNCOMMON", img: "source/ball/ball5.png", weight: 10, payoutUsd: 0.50 },
-        { name: "QUANTUM SHARD", color: "#ff3300", rarity: "RARE", img: "source/ball/ball6.png", weight: 6, payoutUsd: 1.50 },
-        { name: "CYBER TOKEN", color: "#00f3ff", rarity: "RARE", img: "source/ball/ball7.png", weight: 4, payoutUsd: 1.50 },
-        { name: "VOID ARTIFACT", color: "#9b59b6", rarity: "EPIC", img: "source/ball/ball8.png", weight: 4, payoutUsd: 3.00 },
-        { name: "GALACTIC RELIC", color: "#ffffff", rarity: "MYTHIC", img: "source/ball/ball9.png", weight: 1, payoutUsd: 5.00 }
+        { name: "MICRO YIELD", color: "#a8b5c2", rarity: "COMMON", img: "source/icon/ball/ball1.png", weight: 20, payoutUsd: 0.25 },
+        { name: "MINOR SOL DROP", color: "#a8b5c2", rarity: "COMMON", img: "source/icon/ball/ball2.png", weight: 20, payoutUsd: 0.25 },
+        { name: "BASIC DIVIDEND", color: "#a8b5c2", rarity: "COMMON", img: "source/icon/ball/ball3.png", weight: 20, payoutUsd: 0.25 },
+        { name: "NEBULA YIELD", color: "#ffd700", rarity: "UNCOMMON", img: "source/icon/ball/ball4.png", weight: 15, payoutUsd: 0.50 },
+        { name: "PLASMA REWARD", color: "#ff00ea", rarity: "UNCOMMON", img: "source/icon/ball/ball5.png", weight: 10, payoutUsd: 0.50 },
+        { name: "QUANTUM PAYOUT", color: "#ff3300", rarity: "RARE", img: "source/icon/ball/ball6.png", weight: 6, payoutUsd: 1.50 },
+        { name: "CYBER BOUNTY", color: "#00f3ff", rarity: "RARE", img: "source/icon/ball/ball7.png", weight: 4, payoutUsd: 1.50 },
+        { name: "VOID TREASURE", color: "#9b59b6", rarity: "EPIC", img: "source/icon/ball/ball8.png", weight: 4, payoutUsd: 3.00 },
+        { name: "GALACTIC JACKPOT", color: "#ffffff", rarity: "MYTHIC", img: "source/icon/ball/ball9.png", weight: 1, payoutUsd: 5.00 }
     ];
+
+    // [NEW] Function to verify if Admin Wallet has enough SOL to pay the highest possible prize
+    function checkTreasuryLiquidity() {
+        const maxPossiblePrizeUsd = Math.max(...prizes.map(p => p.payoutUsd)) * currentSpinCostUsd;
+        const maxPossiblePrizeSol = maxPossiblePrizeUsd / currentSolPrice;
+
+        if (adminSolBalance < maxPossiblePrizeSol) {
+            // Lock the machine if liquidity is critically low
+            statusText.innerText = "TREASURY DEPLETED. AWAITING SOL REFILL...";
+            statusText.style.color = "#ff4444";
+            statusText.style.textShadow = "0 0 10px #ff4444";
+            
+            coinSlot.classList.remove('pulse-glow');
+            coinSlot.style.borderColor = "#ff4444";
+            coinSlot.style.pointerEvents = "none"; // Disable clicking
+            
+            knob.classList.add('disabled-knob');
+            tierBtns.forEach(btn => btn.disabled = true);
+            
+            return false;
+        }
+        return true;
+    }
 
     function initBalls() {
         ballContainer.innerHTML = '';
@@ -941,6 +969,9 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
         costInEmrld = (currentSpinCostUsd / currentEmrldPrice).toFixed(2);
         const payLabel = document.querySelector('.pay-label');
         if (payLabel) payLabel.innerText = `${costInEmrld} EMRLD`;
+        
+        // Check liquidity every time the tier cost changes
+        checkTreasuryLiquidity();
     }
 
     tierBtns.forEach(btn => {
