@@ -156,6 +156,25 @@
         <section id="screen-shop" class="screen" style="display:none;">
             <h2 class="location-title" style="color:var(--emerald); text-align:center; margin-bottom:15px; font-size:18px; letter-spacing:2px; font-weight:900;">GALAXY MARKET</h2>
             
+            <!-- [BARU] PANEL DOMPET VIRTUAL KHUSUS SHOP -->
+            <div id="virtual-wallet-display" style="background: rgba(13, 17, 23, 0.8); border: 1px solid #30363d; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+                <div style="display: flex; flex-direction: column;">
+                    <span style="color:#8b949e; font-size:9px; font-weight:bold; letter-spacing:1px; margin-bottom:6px;">WEB3 SECURE WALLET</span>
+                    <div style="display:flex; gap:15px;">
+                        <div style="display: flex; align-items: center; gap: 6px; color: #14F195; font-weight: 900; font-size: 14px;" title="Virtual EMRLD">
+                            <span style="display:flex; align-items:center; justify-content:center; width:16px; height:16px; background:#14F195; border-radius:50%; color:#000; font-size:10px; box-shadow: 0 0 5px #14F195;">E</span>
+                            <span id="shop-vembrld">0.00</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; color: #e6edf3; font-weight: 900; font-size: 14px;" title="Virtual SOL">
+                            <img src="source/icon/ball/ball1.png" style="width: 16px; height: 16px; object-fit: contain; border-radius:50%; box-shadow: 0 0 5px rgba(255,255,255,0.5);">
+                            <span id="shop-vsol">0.0000</span>
+                        </div>
+                    </div>
+                </div>
+                <button id="btn-withdraw-vsol" style="background:transparent; border:1px solid #3498db; color:#3498db; padding:8px 12px; border-radius:4px; font-size:10px; font-weight:900; cursor:pointer; transition: 0.2s;">WITHDRAW</button>
+            </div>
+            <!-- ======================================= -->
+
             <!-- Elemen bawaan game asli dipertahankan -->
             <div id="shop-list"></div>
 
@@ -423,7 +442,7 @@
                 </button>
 
                 <button id="btn-upgrade-license" style="width: 100%; padding: 12px; background: transparent; border: 1px solid var(--gold); color: var(--gold); font-weight: bold; border-radius: 4px; cursor: pointer; transition: 0.2s; margin-bottom: 12px; box-shadow: 0 0 10px rgba(255, 202, 40, 0.2);">
-                    ELITE LICENSE & WHITELIST (75,000,000 G)
+                    ELITE LICENSE & WHITELIST (25,000,000 G)
                 </button>
               
                 <button id="btn-disconnect-wallet" style="width: 100%; padding: 12px; background: transparent; border: 1px solid #ff4444; color: #ff4444; font-weight: bold; border-radius: 4px; cursor: pointer; transition: 0.2s;">
