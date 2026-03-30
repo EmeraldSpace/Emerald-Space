@@ -56,12 +56,9 @@ const refreshShopUI = () => {
     const goldDisplay = document.getElementById('player-gold');
     if (goldDisplay) goldDisplay.innerText = state.profile.gold.toLocaleString();
 
-    // Refresh Virtual Balances
+    // Refresh Virtual Balances (Hanya V-SOL yang tersisa)
     const shopVSolDisplay = document.getElementById('shop-vsol');
     if (shopVSolDisplay) shopVSolDisplay.innerText = (state.profile.virtualSol || 0).toFixed(4);
-
-    const shopVEmrldDisplay = document.getElementById('shop-vembrld');
-    if (shopVEmrldDisplay) shopVEmrldDisplay.innerText = (state.profile.virtualEmrld || 0).toFixed(2);
 
     // Update Normal Items
     document.querySelectorAll('.btn-buy').forEach(btn => {
@@ -165,11 +162,10 @@ export const initShop = () => {
     list.appendChild(catItem); 
     list.appendChild(catEquip);
 
-    // === RENDER LOKET PENUKARAN (EXCHANGE V-SOL) ===
+    // === RENDER LOKET PENUKARAN (EXCHANGE V-SOL) PURE GOLD ===
     const EXCHANGES = [
         { id: 1, name: "500,000 GOLD", cost: 0.01, type: "GOLD", amount: 500000, color: "var(--gold)", desc: "Instant funding for your fleet upgrades." },
-        { id: 2, name: "5,000,000 GOLD", cost: 0.1, type: "GOLD", amount: 5000000, color: "var(--gold)", desc: "Massive wealth accumulation." },
-        { id: 3, name: "29 V-EMRLD", cost: 0.01, type: "EMRLD", amount: 29, color: "#14F195", desc: "Tickets to spin the Nebula Bazaar." }
+        { id: 2, name: "5,000,000 GOLD", cost: 0.1, type: "GOLD", amount: 5000000, color: "var(--gold)", desc: "Massive wealth accumulation." }
     ];
 
     EXCHANGES.forEach(ex => {
@@ -184,7 +180,7 @@ export const initShop = () => {
         exItem.className = 'shop-item';
         exItem.style.cssText = `border: 1px dashed ${ex.color}; box-shadow: 0 0 15px ${ex.color}22; background: linear-gradient(45deg, #161b22, #0d1117); display:flex; align-items:center; padding:10px; margin-bottom:10px; border-radius:8px; gap:10px;`;
         
-        let iconImg = ex.type === "GOLD" ? "source/item/gold.png" : "source/icon/ball/ball4.png";
+        let iconImg = "source/item/gold.png";
 
         exItem.innerHTML = `
             <div class="shop-item-img-container" style="border:1px solid ${ex.color}; background:#000; border-radius:6px; padding:5px; flex-shrink:0;">
@@ -229,10 +225,6 @@ export const initShop = () => {
                             upProfile.gold = (upProfile.gold || 0) + amount;
                             if(typeof playSFX === 'function') playSFX('sell');
                             showToast(`+${amount.toLocaleString()} GOLD`, 'var(--gold)');
-                        } else if (type === 'EMRLD') {
-                            upProfile.virtualEmrld = (upProfile.virtualEmrld || 0) + amount;
-                            if(typeof playSFX === 'function') playSFX('craftSuccess');
-                            showToast(`+${amount} V-EMRLD`, '#14F195');
                         }
 
                         updateState({ profile: upProfile });
