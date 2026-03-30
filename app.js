@@ -2,7 +2,7 @@
    CORE APP - EMERALD SPACE (SOLANA NETWORK READY)
    ========================================= */
 
-import { getState, updateState, loadStateFromServer, getTopPlayers, checkAndRecoverWallet, setReferrer } from './js/logic/state.js';
+import { getState, updateState, loadStateFromServer, getTopPlayers, checkAndRecoverWallet, setReferrer, supabase } from './js/logic/state.js';
 import { SHIPS } from './js/data/ships.js';
 import { initHangar } from './js/ui/hangarUI.js';
 import { initMap } from './js/ui/mapUI.js';
@@ -59,6 +59,12 @@ const switchScreen = (targetId) => {
 const refreshUI = (screenId) => {
     try {
         updateTopBar();
+        
+        // Panggil auto-checker secara diam-diam
+        if(screenId === 'shop' || screenId === 'hangar') {
+             checkLatestWithdrawStatus(); 
+        }
+
         switch (screenId) {
             case 'hangar': initHangar(); break;
             case 'map': initMap(); break;
@@ -68,6 +74,7 @@ const refreshUI = (screenId) => {
         }
     } catch (err) { console.error("Error refresh UI:", err); }
 };
+
 
 const updateTopBar = () => {
     const state = getState();
@@ -368,6 +375,43 @@ async function handleWalletSelection(walletType) {
         window.showSimplePopup("SIGNAL SECURED", `Mainframe synced to Solana Wallet:<br><strong style="color:#14F195; word-break:break-all;">${shortAddress}</strong>`, "#14F195");
     }
 }
+
+// ==========================================
+// AUTO CHECK WITHDRAWAL STATUS
+// ==========================================
+const checkLatestWithdrawStatus = async () => {
+    const state = getState();
+    const wallet = state.profile.walletAddress;
+    if (!wallet || !supabase) return;
+
+    try {
+        const { data, error } = await supabase
+            .from('withdraw_requests')
+            .select('*')
+            .eq('player_wallet', wallet)
+            .eq('status', 'SUCCESS')
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        if (data && !error) {
+            const lastNotifiedTx = localStorage.getItem('LAST_NOTIFIED_TX');
+            
+            // Jika TxHash ini belum pernah dinotifikasi ke pemain
+            if (data.tx_hash && lastNotifiedTx !== data.tx_hash) {
+                window.showSimplePopup(
+                    "WITHDRAWAL RECEIVED!", 
+                    `The transmission is complete! <br><br> Amount: <strong style="color:#14F195;">${data.amount.toFixed(4)} SOL</strong><br>Status: <span style="color:#14F195; font-weight:bold;">SUCCESS</span><br><br><a href="https://solscan.io/tx/${data.tx_hash}" target="_blank" style="color:#3498db; text-decoration:none; font-weight:bold; background:#161b22; padding:5px 10px; border-radius:4px; border:1px solid #30363d; display:inline-block; margin-top:10px;">VIEW ON SOLSCAN ↗</a>`, 
+                    "#14F195"
+                );
+                localStorage.setItem('LAST_NOTIFIED_TX', data.tx_hash);
+            }
+        }
+    } catch (e) {
+        // Abaikan jika tidak ada data
+    }
+};
+
 
 const initGame = async () => {
     try {
@@ -1147,7 +1191,6 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
         }
     }
 
-    // [UPDATED] showPrize now updates the Virtual SOL balance
     let currentWonSolAmount = 0;
     
     function showPrize(win) {
@@ -1170,27 +1213,23 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
         modalContent.querySelector('.hologram-title').style.color = win.color;
         modalContent.querySelector('.hologram-title').style.textShadow = `0 0 15px ${win.color}`;
         
-        // Change button text to reflect adding to virtual balance
         btnClaimGacha.innerText = "ADD TO V-SOL BALANCE";
 
         gachaModal.style.display = 'flex';
         createExplosion(win.color);
     }
 
-    // [UPDATED] closeModal handles adding the won SOL to the virtual balance
     function closeModal() {
         if(typeof playSFX === 'function') playSFX('craftSuccess');
 
-        // Add the won amount to Virtual SOL
         virtualSolBalance += currentWonSolAmount;
         
-        // Update State and UI
         const currentState = getState();
         updateState({ profile: { ...currentState.profile, virtualSol: virtualSolBalance } });
         updateVirtualWalletUI();
         
         window.showSimplePopup("YIELD SECURED", `${currentWonSolAmount} V-SOL has been added to your secure wallet.`, "#14F195");
-        currentWonSolAmount = 0; // Reset
+        currentWonSolAmount = 0; 
 
         gachaModal.style.display = 'none';
         isProcessing = false;
@@ -1212,33 +1251,124 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
         if (ballContainer.children.length < 4) initBalls();
     }
 
-    // Attach event listener to the claim button
     if (btnClaimGacha) {
         btnClaimGacha.addEventListener('click', closeModal);
     }
 
-    // [NEW] Event Listener for Withdraw Button
-    const btnWithdrawVsol = document.getElementById('btn-withdraw-vsol');
-    if (btnWithdrawVsol) {
-        btnWithdrawVsol.addEventListener('click', () => {
+    // [NEW] Event Listener for History Button
+    const btnHistoryVsol = document.getElementById('btn-history-vsol');
+    if (btnHistoryVsol) {
+        btnHistoryVsol.addEventListener('click', async () => {
             if(typeof playSFX === 'function') playSFX('click');
-            if(virtualSolBalance <= 0) {
-                 window.showSimplePopup("NO YIELD", "Your V-SOL balance is empty.", "#ff4444");
+            
+            const state = getState();
+            const walletAddr = state.profile.walletAddress;
+            if (!walletAddr) {
+                 window.showSimplePopup("ACCESS DENIED", "Please connect your wallet first.", "#ff4444");
                  return;
             }
-            window.showSimplePopup("WITHDRAWAL REQUEST", `A request to withdraw ${virtualSolBalance.toFixed(4)} SOL has been sent to the network. Processing may take up to 24 hours.`, "#3498db");
-            // In a real app, this would trigger an API call to log the withdrawal request
-            // For now, we simulate clearing the balance after a request
-            virtualSolBalance = 0;
-            const currentState = getState();
-            updateState({ profile: { ...currentState.profile, virtualSol: virtualSolBalance } });
-            updateVirtualWalletUI();
+
+            btnHistoryVsol.disabled = true;
+            btnHistoryVsol.innerText = "LOADING...";
+
+            try {
+                const { data, error } = await supabase
+                    .from('withdraw_requests')
+                    .select('*')
+                    .eq('player_wallet', walletAddr)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                if (error) throw error;
+
+                let listHtml = data.map(log => {
+                    const date = new Date(log.created_at).toLocaleDateString();
+                    const statusColor = log.status === 'SUCCESS' ? '#14F195' : (log.status === 'PENDING' ? '#ffca28' : '#ff4444');
+                    const txLink = log.tx_hash ? `<a href="https://solscan.io/tx/${log.tx_hash}" target="_blank" style="color:#3498db; font-size:10px; text-decoration:none; border:1px solid #30363d; padding:2px 6px; border-radius:4px; background:#161b22;">VIEW TX ↗</a>` : '';
+                    
+                    return `
+                        <div style="border-bottom: 1px dashed #30363d; padding: 10px 0;">
+                            <div style="display:flex; justify-content:space-between; font-size:10px; margin-bottom:6px;">
+                                <span style="color:#8b949e;">${date}</span>
+                                <span style="color:${statusColor}; font-weight:bold; letter-spacing:1px;">${log.status}</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="color:#e6edf3; font-weight:bold; font-size:14px;">${log.amount.toFixed(4)} SOL</span>
+                                ${txLink}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                if (!listHtml) listHtml = '<p style="text-align:center; color:#8b949e; font-size:12px; margin-top:10px;">No withdrawal history found.</p>';
+
+                window.showSimplePopup("WITHDRAWAL LOGS", `<div style="text-align:left; max-height:250px; overflow-y:auto; padding-right:5px;">${listHtml}</div>`, "#ab9ff2");
+
+            } catch (err) {
+                console.error("History Error:", err);
+                window.showSimplePopup("TRANSMISSION ERROR", "Failed to load logs. Please try again.", "#ff4444");
+            } finally {
+                btnHistoryVsol.disabled = false;
+                btnHistoryVsol.innerText = "HISTORY";
+            }
         });
     }
 
-    // Initialize the gacha balls
+    const btnWithdrawVsol = document.getElementById('btn-withdraw-vsol');
+    if (btnWithdrawVsol) {
+        btnWithdrawVsol.addEventListener('click', async () => {
+            if(typeof playSFX === 'function') playSFX('click');
+            
+            // Batas minimal penarikan agar admin tidak capek kirim receh (misal 0.05 SOL)
+            if(virtualSolBalance < 0.05) {
+                 window.showSimplePopup("INSUFFICIENT BALANCE", "Minimum withdrawal is 0.05 V-SOL.", "#ff4444");
+                 return;
+            }
+
+            const state = getState();
+            const walletAddr = state.profile.walletAddress;
+            if (!walletAddr) {
+                 window.showSimplePopup("ACCESS DENIED", "Please connect your wallet first.", "#ff4444");
+                 return;
+            }
+
+            btnWithdrawVsol.disabled = true;
+            btnWithdrawVsol.innerText = "TRANSMITTING...";
+
+            try {
+                // Kirim laporan ke Supabase
+                const { error } = await supabase
+                    .from('withdraw_requests')
+                    .insert([
+                        { 
+                            player_wallet: walletAddr, 
+                            amount: virtualSolBalance, 
+                            status: 'PENDING' 
+                        }
+                    ]);
+
+                if (error) throw error;
+
+                // Jika sukses masuk database, reset saldo V-SOL jadi 0
+                const oldBalance = virtualSolBalance;
+                virtualSolBalance = 0;
+                
+                updateState({ profile: { ...state.profile, virtualSol: virtualSolBalance } });
+                updateVirtualWalletUI();
+
+                window.showSimplePopup("WITHDRAWAL SECURED", `Request for <strong style="color:var(--gold)">${oldBalance.toFixed(4)} SOL</strong> sent to Central Command!<br><br>Status: <span style="color:#ffca28">PENDING</span><br>Processing takes 12-24 hours.`, "#3498db");
+
+            } catch (err) {
+                console.error("Withdraw Error:", err);
+                window.showSimplePopup("TRANSMISSION ERROR", "Failed to send request. Please try again.", "#ff4444");
+            } finally {
+                btnWithdrawVsol.disabled = false;
+                btnWithdrawVsol.innerText = "WITHDRAW";
+            }
+        });
+    }
+
     initBalls();
 })();
-
 
 document.addEventListener("DOMContentLoaded", initGame);
