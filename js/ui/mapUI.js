@@ -21,6 +21,7 @@ export const initMap = async () => {
     const state = getState();
     const pLevel = state.profile.level || 1;
     const pIsElite = state.profile.isElite === true; 
+    const pEmrldBalance = state.profile.emrldBalance || 0; // [NEW] Get EMRLD Balance from State
 
     container.innerHTML = `
         <div style="text-align:center; padding:60px 20px; animation: pulse 1.5s infinite;">
@@ -31,7 +32,7 @@ export const initMap = async () => {
         </div>
     `;
 
-    // Retrieve SOL Balance from Blockchain
+    // Retrieve SOL Balance from Blockchain (Tetap dipanggil jika dibutuhkan untuk hal lain nanti)
     let solBalance = 0;
     try {
         solBalance = await checkSolBalance();
@@ -172,8 +173,9 @@ export const initMap = async () => {
         const isVipMap = loc.reqToken ? true : false;
         
         const isLevelLocked = pLevel < loc.minLevel;
-        const hasCryptoAccess = solBalance >= 0.5; 
         
+        // [UPDATE] Check Access based on $EMRLD Balance OR Elite License
+        const hasCryptoAccess = pEmrldBalance >= 100000; 
         const isEliteLocked = isVipMap && !pIsElite && !hasCryptoAccess; 
         
         const isLocked = isLevelLocked || isEliteLocked; 
@@ -189,7 +191,7 @@ export const initMap = async () => {
 
         let reqText = '';
         if (isVipMap) {
-            reqText = `<div class="map-req-text ${isLocked ? 'req-fail' : 'req-pass-vip'}">Req: Lv.${loc.minLevel} & (0.5 SOL or Elite License)</div>`;
+            reqText = `<div class="map-req-text ${isLocked ? 'req-fail' : 'req-pass-vip'}">Req: Lv.${loc.minLevel} & (100k EMRLD or Elite License)</div>`;
         } else {
             reqText = `<div class="map-req-text ${isLocked ? 'req-fail' : 'req-pass'}">Req: Lv.${loc.minLevel}</div>`;
         }
@@ -209,7 +211,7 @@ export const initMap = async () => {
                 if (isLevelLocked) {
                     showMapWarning("ACCESS DENIED", `This sector is too dangerous!<br><br>Required: <strong class="text-emerald">Level ${loc.minLevel}</strong><br>Your Level: <strong style="color:#ff4444;">${pLevel}</strong>`);
                 } else if (isEliteLocked) {
-                    showMapWarning("ELITE ACCESS DENIED", `Exclusive access for Elite Pilots & Crypto Holders!<br><br>To enter this sector, you must hold at least <strong style="color:#14F195;">0.5 SOL</strong> in your wallet, OR purchase the <strong style="color:var(--gold);">Elite License</strong> from the INFO Terminal.`);
+                    showMapWarning("ELITE ACCESS DENIED", `Exclusive access for Elite Pilots & $EMRLD Holders!<br><br>To enter this sector, you must hold at least <strong style="color:#14F195;">100,000 EMRLD</strong> in your wallet, OR purchase the <strong style="color:var(--gold);">Elite License</strong> from the INFO Terminal.`);
                 }
                 return; 
             }
