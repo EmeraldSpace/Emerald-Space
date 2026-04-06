@@ -32,7 +32,7 @@ window.copyAddress = (targetId) => {
     const toast = document.createElement('div');
     toast.id = 'sys-toast';
     toast.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#14F195; color:#000; padding:10px 20px; border-radius:6px; font-weight:900; font-size:12px; z-index:99999; box-shadow:0 0 15px #14F195; transition: opacity 0.5s ease-in-out; text-transform:uppercase; letter-spacing:1px;';
-    toast.innerHTML = '📋 COPIED!';
+    toast.innerHTML = 'ðŸ“‹ COPIED!';
     document.body.appendChild(toast);
     
     setTimeout(() => toast.style.opacity = '0', 2000);
@@ -128,7 +128,7 @@ const checkDailyReward = () => {
     overlay.style.zIndex = "99999";
     overlay.innerHTML = `
         <div class="modal-box" style="border-color: #3498db; box-shadow: 0 0 30px rgba(52, 152, 219, 0.4); background: #0d1117; text-align:center;">
-            <h3 style="color:#3498db; margin-bottom:5px; font-size:18px; letter-spacing:1px; text-shadow: 0 0 10px #3498db;">📦 ¦ DAILY SUPPLY DROP</h3>
+            <h3 style="color:#3498db; margin-bottom:5px; font-size:18px; letter-spacing:1px; text-shadow: 0 0 10px #3498db;">ðŸ“¦ Â¦ DAILY SUPPLY DROP</h3>
             <div style="color:#8b949e; font-size:12px; margin-bottom:15px; font-weight:bold;">LOGIN STREAK: DAY ${streak}/7</div>
             
             <img src="source/icon/loot.png" style="width:70px; height:70px; margin-bottom:15px; filter:drop-shadow(0 0 15px #3498db); animation: float 3s ease-in-out infinite;">
@@ -401,7 +401,7 @@ const checkLatestWithdrawStatus = async () => {
             if (data.tx_hash && lastNotifiedTx !== data.tx_hash) {
                 window.showSimplePopup(
                     "WITHDRAWAL RECEIVED!", 
-                    `The transmission is complete! <br><br> Amount: <strong style="color:#14F195;">${data.amount.toFixed(4)} SOL</strong><br>Status: <span style="color:#14F195; font-weight:bold;">SUCCESS</span><br><br><a href="https://solscan.io/tx/${data.tx_hash}" target="_blank" style="color:#3498db; text-decoration:none; font-weight:bold; background:#161b22; padding:5px 10px; border-radius:4px; border:1px solid #30363d; display:inline-block; margin-top:10px;">VIEW ON SOLSCAN ↗</a>`, 
+                    `The transmission is complete! <br><br> Amount: <strong style="color:#14F195;">${data.amount.toFixed(4)} SOL</strong><br>Status: <span style="color:#14F195; font-weight:bold;">SUCCESS</span><br><br><a href="https://solscan.io/tx/${data.tx_hash}" target="_blank" style="color:#3498db; text-decoration:none; font-weight:bold; background:#161b22; padding:5px 10px; border-radius:4px; border:1px solid #30363d; display:inline-block; margin-top:10px;">VIEW ON SOLSCAN â†—</a>`, 
                     "#14F195"
                 );
                 localStorage.setItem('LAST_NOTIFIED_TX', data.tx_hash);
@@ -457,7 +457,7 @@ const initAbout = async () => {
         const refBtn = document.createElement('button');
         refBtn.id = 'btn-referral-system';
         refBtn.style.cssText = "width: 100%; padding: 12px; background: rgba(46, 204, 113, 0.1); border: 1px dashed var(--emerald); color: var(--emerald); font-weight: 900; border-radius: 4px; cursor: pointer; transition: 0.2s; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 10px rgba(46, 204, 113, 0.2);";
-        refBtn.innerHTML = "🤝 RECRUIT CREW (GET 5,000 GOLD)";
+        refBtn.innerHTML = "ðŸ¤ RECRUIT CREW (GET 5,000 GOLD)";
 
         const tokenomicsBtn = document.getElementById('btn-show-tokenomics');
         if(tokenomicsBtn) {
@@ -528,7 +528,7 @@ const initAbout = async () => {
                     <div style="background: linear-gradient(180deg, #161b22, #0d1117); border: 1px solid var(--gold); padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; box-shadow: 0 0 20px rgba(255, 202, 40, 0.15); position: relative; overflow: hidden;">
                         <div style="position:absolute; top:-50px; left:50%; transform:translateX(-50%); width:150px; height:100px; background:var(--gold); filter:blur(60px); opacity:0.2; pointer-events:none;"></div>
                         
-                        <h3 style="color: var(--gold); font-size: 14px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 5px var(--gold);">🏆 GLOBAL PRIZE POOL</h3>
+                        <h3 style="color: var(--gold); font-size: 14px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 5px var(--gold);">ðŸ† GLOBAL PRIZE POOL</h3>
                         <p style="color: #8b949e; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">Awaiting Seasonal Distribution</p>
                         
                         <div id="live-prize-pool-ton" style="color: #14F195; font-size: 26px; font-weight: 900; text-shadow: 0 0 15px rgba(20, 241, 149, 0.6); margin-bottom: 2px; letter-spacing: 1px;">CALCULATING...</div>
@@ -546,35 +546,35 @@ const initAbout = async () => {
                     <div style="background: rgba(46, 204, 113, 0.05); border-left: 3px solid var(--emerald); padding: 12px; margin-bottom: 20px; border-radius: 0 6px 6px 0;">
                         <strong style="color: var(--emerald); font-size: 13px; display: block; margin-bottom: 4px; text-transform: uppercase;">100% LAUNCH ON BAGS APP</strong>
                         <p style="color: #c9d1d9; font-size: 11px; line-height: 1.6; margin: 0; text-align: justify;">
-                            Emerald Space is officially launching 100% on the <strong>Bags App</strong> ecosystem! No VCs, no presales—just pure, community-driven space exploration on the Solana Network. Get your ship, forge your weapons, and earn real yield!
+                            Emerald Space is officially launching 100% on the <strong>Bags App</strong> ecosystem! No VCs, no presalesâ€”just pure, community-driven space exploration on the Solana Network. Get your ship, forge your weapons, and earn real yield!
                         </p>
                     </div>
                     
                     <h3 style="color: var(--gold); font-size: 14px; margin-bottom: 12px; border-bottom: 1px solid #30363d; padding-bottom: 5px; text-transform: uppercase; display: flex; align-items: center; gap: 8px;">
-                        🚀 CORE GAME FEATURES
+                        ðŸš€ CORE GAME FEATURES
                     </h3>
                     
                     <div style="background: #161b22; border: 1px solid #30363d; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
                         <div style="margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
-                            <span style="color:#2ecc71; font-size:11px; font-weight: bold;">⚔️ MMO Global Boss Raids</span>
+                            <span style="color:#2ecc71; font-size:11px; font-weight: bold;">âš”ï¸ MMO Global Boss Raids</span>
                             <div style="color:#8b949e; font-size:10px; line-height:1.4; margin-top:3px;">Unite with the entire server to defeat the Leviathan. Deal damage, survive, and secure massive SOL & USDC payouts!</div>
                         </div>
                         <div style="margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
-                            <span style="color:#14F195; font-size:11px; font-weight: bold;">🎲 Web3 Black Market Gacha</span>
+                            <span style="color:#14F195; font-size:11px; font-weight: bold;">ðŸŽ² Web3 Black Market Gacha</span>
                             <div style="color:#8b949e; font-size:10px; line-height:1.4; margin-top:3px;">Roll secure on-chain crates using SOL to unlock Mythic and Legendary ship equipment directly to your inventory.</div>
                         </div>
                         <div style="margin-bottom:8px; border-bottom: 1px dashed #30363d; padding-bottom: 8px;">
-                            <span style="color:var(--gold); font-size:11px; font-weight: bold;">🛠️ Smart Forge & Crafting</span>
+                            <span style="color:var(--gold); font-size:11px; font-weight: bold;">ðŸ› ï¸ Smart Forge & Crafting</span>
                             <div style="color:#8b949e; font-size:10px; line-height:1.4; margin-top:3px;">Dismantle weak items into Iron Ore & Dark Energy. Combine duplicates to evolve your gear to the highest rarity!</div>
                         </div>
                         <div>
-                            <span style="color:#e6edf3; font-size:11px; font-weight: bold;">🔒 Elite VIP Sectors</span>
+                            <span style="color:#e6edf3; font-size:11px; font-weight: bold;">ðŸ”’ Elite VIP Sectors</span>
                             <div style="color:#8b949e; font-size:10px; line-height:1.4; margin-top:3px;">Hold 0.5 SOL or an Elite License to access high-risk, high-reward galaxies with exclusive material drops.</div>
                         </div>
                     </div>
 
                     <h3 style="color: var(--emerald); font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #30363d; padding-bottom: 5px; text-transform: uppercase;">
-                        ⚙️ The Deflationary Engine
+                        âš™ï¸ The Deflationary Engine
                     </h3>
                     <p style="color: #8b949e; font-size: 11px; line-height: 1.6; margin-bottom: 12px; text-align: justify;">
                         Our economy relies on an aggressive, self-sustaining flywheel. Every time a pilot spends SOL in-game, the system automatically triggers a market intervention:
@@ -640,7 +640,7 @@ const initAbout = async () => {
                         <div style="position:absolute; top:-50px; left:50%; transform:translateX(-50%); width:100px; height:100px; background:var(--gold); filter:blur(50px); opacity:0.3; pointer-events:none;"></div>
                         
                         <img src="source/icon/warning.png" class="modal-icon" style="filter: drop-shadow(0 0 10px var(--gold));">
-                        <h3 class="modal-title" style="color:var(--gold); text-shadow: 0 0 10px var(--gold); font-size: 20px; letter-spacing: 2px;"> 🎫 ELITE LICENSE</h3>
+                        <h3 class="modal-title" style="color:var(--gold); text-shadow: 0 0 10px var(--gold); font-size: 20px; letter-spacing: 2px;"> ðŸŽ« ELITE LICENSE</h3>
                         
                         <p class="modal-text" style="color: #e6edf3; font-size: 13px; line-height: 1.6; margin-bottom: 15px;">
                             Upgrade your pilot clearance to <strong style="color:var(--gold)">ELITE TIER</strong>.<br>
@@ -688,62 +688,35 @@ const initAbout = async () => {
         }
     }
 
-    const fetchPrizePool = async () => {
+            const fetchPrizePool = async () => {
         const oldPrizePoolEl = document.getElementById('live-prize-pool');
         const popupPrizePoolEl = document.getElementById('live-prize-pool-ton');
         
-        if (oldPrizePoolEl) oldPrizePoolEl.innerHTML = '<span style="color:#8b949e;">CALCULATING...</span>';
-        if (popupPrizePoolEl) popupPrizePoolEl.innerText = "CALCULATING...";
+        // 1. Tentukan angka SOL manual di sini (Contoh: 3 SOL)
+        let realSol = 3; 
+        
+        // 2. Format angkanya agar rapi (2 angka di belakang koma)
+        const finalSolText = `${realSol.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} SOL`;
 
-        try {
-            const adminWallet = 'ExNJ84TBmLsy7FB4duYteK5bWXEEuofSStPHCcA7TeQc';
-            const req = await fetch('https://mainnet.helius-rpc.com/?api-key=79850b9a-0b16-45cc-9ff8-b38375ea7d14', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    jsonrpc: '2.0', id: 1,
-                    method: 'getBalance',
-                    params: [adminWallet]
-                })
-            });
-            const data = await req.json();
-            
-            let realSol = 0;
-            if (data && data.result && data.result.value) {
-                realSol = data.result.value / 1000000000;
-            }
-            
-            const finalSolText = `${realSol.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} SOL`;
+        // 3. Update langsung ke Layar UI Menu About
+        if (oldPrizePoolEl) {
+            oldPrizePoolEl.innerHTML = `
+                <div style="color: #14F195; font-size: 22px; font-weight: 900; text-shadow: 0 0 10px rgba(20, 241, 149, 0.6);">${finalSolText}</div>
+                <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-bottom: 8px; letter-spacing: 0.5px;">(Elite 80% | Reg 20%)</div>
+                <div style="color: #8b949e; font-size: 14px; margin: 4px 0;">+</div>
+                <div style="color: #3498db; font-size: 18px; font-weight: 900; text-shadow: 0 0 10px rgba(52, 152, 219, 0.6); animation: pulse 2s infinite;">1,000 USDC</div>
+                <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-top: 4px; letter-spacing: 0.5px;">(Top Pilots Reward)</div>
+            `;
+        }
 
-            if (oldPrizePoolEl) {
-                oldPrizePoolEl.innerHTML = `
-                    <div style="color: #14F195; font-size: 22px; font-weight: 900; text-shadow: 0 0 10px rgba(20, 241, 149, 0.6);">${finalSolText}</div>
-                    <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-bottom: 8px; letter-spacing: 0.5px;">(Elite 80% | Reg 20%)</div>
-                    <div style="color: #8b949e; font-size: 14px; margin: 4px 0;">+</div>
-                    <div style="color: #3498db; font-size: 18px; font-weight: 900; text-shadow: 0 0 10px rgba(52, 152, 219, 0.6); animation: pulse 2s infinite;">1,000 USDC</div>
-                    <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-top: 4px; letter-spacing: 0.5px;">(Top Pilots Reward)</div>
-                `;
-            }
-
-            if (popupPrizePoolEl) {
-                popupPrizePoolEl.innerText = finalSolText;
-            }
-
-        } catch (err) {
-            if (oldPrizePoolEl) {
-                oldPrizePoolEl.innerHTML = `
-                    <div style="color: #14F195; font-size: 22px; font-weight: 900;">0.00 SOL</div>
-                    <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-bottom: 8px; letter-spacing: 0.5px;">(Elite 80% | Reg 20%)</div>
-                    <div style="color: #8b949e; font-size: 14px; margin: 4px 0;">+</div>
-                    <div style="color: #3498db; font-size: 18px; font-weight: 900;">1,000 USDC</div>
-                    <div style="color: #8b949e; font-size: 9px; font-weight: bold; margin-top: 4px; letter-spacing: 0.5px;">(Top Pilots Reward)</div>
-                `;
-            }
-            if (popupPrizePoolEl) popupPrizePoolEl.innerText = "0.00 SOL"; 
+        // 4. Update ke Modal Pop-up Tokenomics
+        if (popupPrizePoolEl) {
+            popupPrizePoolEl.innerText = finalSolText;
         }
     };
 
     fetchPrizePool();
+
 
     const fetchLeaderboard = async () => {
         const list = document.getElementById('leaderboard-list');
@@ -908,7 +881,7 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
     toast.id = 'global-toast';
     toast.style.cssText = `position:fixed; top:65px; left:50%; transform:translateX(-50%); background:rgba(13,17,23,0.9); border:1px solid #30363d; color:#e6edf3; padding:8px 15px; border-radius:20px; font-size:10px; z-index:99998; box-shadow:0 5px 15px rgba(0,0,0,0.5); backdrop-filter:blur(5px); white-space:nowrap; transition:all 0.5s ease; opacity:0; pointer-events:none;`;
     
-    toast.innerHTML = `📡 <b>GLOBAL:</b> Pilot <b style="color:var(--emerald);">${playerName}</b> ${actionText}`;
+    toast.innerHTML = `ðŸ“¡ <b>GLOBAL:</b> Pilot <b style="color:var(--emerald);">${playerName}</b> ${actionText}`;
     document.body.appendChild(toast);
     
     setTimeout(() => { toast.style.opacity = '1'; toast.style.top = '75px'; }, 100);
@@ -1284,7 +1257,7 @@ window.showRealTimeBroadcast = (playerName, actionText, highlightColor = "var(--
                 let listHtml = data.map(log => {
                     const date = new Date(log.created_at).toLocaleDateString();
                     const statusColor = log.status === 'SUCCESS' ? '#14F195' : (log.status === 'PENDING' ? '#ffca28' : '#ff4444');
-                    const txLink = log.tx_hash ? `<a href="https://solscan.io/tx/${log.tx_hash}" target="_blank" style="color:#3498db; font-size:10px; text-decoration:none; border:1px solid #30363d; padding:2px 6px; border-radius:4px; background:#161b22;">VIEW TX ↗</a>` : '';
+                    const txLink = log.tx_hash ? `<a href="https://solscan.io/tx/${log.tx_hash}" target="_blank" style="color:#3498db; font-size:10px; text-decoration:none; border:1px solid #30363d; padding:2px 6px; border-radius:4px; background:#161b22;">VIEW TX â†—</a>` : '';
                     
                     return `
                         <div style="border-bottom: 1px dashed #30363d; padding: 10px 0;">
